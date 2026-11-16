@@ -1,0 +1,127 @@
+# Deterministic quality gates for RequestHub. Agents can propose changes; these checks decide if they pass.
+name: CI
+
+on:
+  pull_request:
+    paths: ['app/**', '!app/infra/**', '!app/**/*.md', '.github/workflows/ci.yml']
+  push:
+    branches: [main]
+    paths: ['app/**', '!app/infra/**', '!app/**/*.md', '.github/workflows/ci.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API and worker tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: requesthub
+          POSTGRES_PASSWORD: devpass
+          POSTGRES_DB: requesthub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U requesthub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build
+        run: dotnet build app/RequestHub.slnx -c Release
+      - name: Test (integration tests on PostgreSQL, includes the OpenAPI contract check)
+        run: dotnet test --solution app/RequestHub.slnx -c Release --no-build
+
+  web:
+    name: Web UI checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: app/web/package-lock.json
+      - run: npm ci --prefix app/web
+      - run: npm run typecheck --prefix app/web
+      - run: npm test --prefix app/web
+      - run: npm run build --prefix app/web
+
+  e2e:
+    name: Browser tests
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: requesthub
+          POSTGRES_PASSWORD: devpass
+          POSTGRES_DB: requesthub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U requesthub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: app/web/package-lock.json
+      - name: Build web UI into the API
+        run: |
+          npm ci --prefix app/web
+          npm run build --prefix app/web
+      - name: Start RequestHub (development auth, local database)
+        run: |
+          dotnet build app/src/RequestHub.Api -c Release
+          nohup dotnet run --project app/src/RequestHub.Api -c Release --no-build --no-launch-profile > api.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:5080/health/ready > /dev/null; then echo "API ready"; exit 0; fi
+            sleep 2
+          done
+          cat api.log; exit 1
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: http://localhost:5080
+      - name: Run Playwright tests
+        working-directory: app/web
+        run: |
+          # No --with-deps: the runner image already has Chromium's system libraries, and the optional fonts it would add from
+          # the Ubuntu mirror have taken up to 15 minutes. The launch check fails fast if a library is ever missing.
+          npx playwright install chromium
+          node -e "require('@playwright/test').chromium.launch().then(b => b.close()).then(() => console.log('Chromium launches'))"
+          npm run e2e
+        env:
+          BASE_URL: http://localhost:5080
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            app/web/playwright-report
+            api.log
+          retention-days: 7

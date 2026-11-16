@@ -1,0 +1,58 @@
+# Environment for the Copilot cloud agent (and Copilot code review).
+# GitHub runs the job named `copilot-setup-steps` before the agent starts, from the default branch.
+name: Copilot setup steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+  pull_request:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    # The agent runs RequestHub's integration tests against this database.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: requesthub
+          POSTGRES_PASSWORD: devpass
+          POSTGRES_DB: requesthub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U requesthub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: app/web/package-lock.json
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Restore .NET packages and tools
+        working-directory: app
+        run: |
+          dotnet restore RequestHub.slnx
+          dotnet tool restore
+      - name: Install web dependencies and the Playwright browser
+        # No --with-deps: the runner image already has Chromium's system libraries, and installing the optional fonts from
+        # the Ubuntu mirror inside the agent's firewall took 15 minutes. The launch check fails setup if a library is missing.
+        working-directory: app/web
+        run: |
+          npm ci
+          npx playwright install chromium
+          node -e "require('@playwright/test').chromium.launch().then(b => b.close()).then(() => console.log('Chromium launches'))"
