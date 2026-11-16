@@ -13,7 +13,7 @@ flowchart TB
   subgraph ACC["Seven accelerators: a Copilot agent, skills, checks, and an entry point each"]
     direction LR
     P1["1 Plan"] --> P2["2 Design"] --> P3["3 Develop"] --> P4["4 Test"] --> P5["5 Secure"] --> P6["6 Release"] --> P7["7 Operate"]
-    P7 -. "follow-up Issue" .-> P3
+    P7 -.->|follow-up Issue| P3
   end
   subgraph FND["Shared foundation"]
     direction LR
