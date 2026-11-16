@@ -2,8 +2,9 @@
 name: CI
 
 on:
+  # Every pull request, so that the ruleset on main can require these jobs: a required check that a `paths` filter skips
+  # stays pending and blocks the merge.
   pull_request:
-    paths: ['app/**', '!app/infra/**', '!app/**/*.md', '.github/workflows/ci.yml']
   push:
     branches: [main]
     paths: ['app/**', '!app/infra/**', '!app/**/*.md', '.github/workflows/ci.yml']
