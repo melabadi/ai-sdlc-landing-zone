@@ -56,3 +56,5 @@ jobs:
           npm ci
           npx playwright install chromium
           node -e "require('@playwright/test').chromium.launch().then(b => b.close()).then(() => console.log('Chromium launches'))"
+      - name: Install the Python packages of the accelerators' scripts (01-plan-github's validator needs jsonschema)
+        run: pip install -r planning/requirements.txt
