@@ -1,0 +1,42 @@
+# Design · GitHub: checks the agentic design review on every pull request that changes it.
+#  - The lock file is exactly what the pinned gh-aw compiler produces from its source, so the workflow that runs is the
+#    workflow that was reviewed.
+#  The solution's unit tests stay in its source repository: they read that repository's layout.
+name: Design · GitHub · check the agentic design review
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/design-github-agentic-review.*'
+      - '.github/workflows/design-github-checks.yml'
+      - '.github/skills/contract-impact/**'
+      # The lock file records every custom agent's frontmatter, so a change to any agent makes it stale.
+      - '.github/agents/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GH_AW_VERSION: v1.2.2 # pinned compiler; recompile and commit the lock file when you change it
+
+jobs:
+  agentic-workflow:
+    name: Agentic design review lock file is up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install gh-aw ${{ env.GH_AW_VERSION }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh extension install github/gh-aw --pin "$GH_AW_VERSION"
+      - name: Compile in strict mode and compare with the committed lock file
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh aw compile design-github-agentic-review --strict --validate --no-check-update
+          git diff --exit-code -- .github/workflows/design-github-agentic-review.lock.yml \
+            || { echo "::error::Run 'gh aw compile design-github-agentic-review' with gh-aw $GH_AW_VERSION, and commit the lock file."; exit 1; }
