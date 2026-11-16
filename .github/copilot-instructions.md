@@ -1,20 +1,28 @@
 # Copilot instructions for this repository
 
-This repository holds **RequestHub**, a small request-and-approval portal with synthetic data: requesters ask for equipment, access, or services, a reviewer triages each request, and an approver decides.
+This repository holds **RequestHub**, a small request-and-approval portal with synthetic data: requesters ask for equipment, access, or services, a reviewer triages each request, and an approver decides. It is also a landing zone: the seven GitHub accelerators of AI across the software development lifecycle are installed in it, one per SDLC phase (see `README.md`).
 
 ## Repository map
 
 | Path | What lives there |
 | --- | --- |
 | `app/` | RequestHub: ASP.NET Core 10 API (`src/RequestHub.Api`), domain + EF Core (`src/RequestHub.Core`), notification worker (`src/RequestHub.Worker`), React web UI (`web/`), integration tests (`tests/`), API contract (`contracts/`), and the Bicep modules that host it (`infra/`). |
-| `.github/workflows/ci.yml` | CI: the API and worker tests on PostgreSQL, the web UI checks, and the browser tests. |
-| `.github/workflows/copilot-setup-steps.yml` | The Copilot cloud agent's environment: .NET, Node.js, Playwright, Python, and PostgreSQL. |
+| `.github/workflows/ci.yml` | CI: the API and worker tests on PostgreSQL, the web UI checks, and the browser tests, on every pull request. |
+| `.github/workflows/copilot-setup-steps.yml` | The Copilot cloud agent's environment: .NET, Node.js, Playwright, Python with the accelerators' packages, and PostgreSQL. |
+| `.github/agents/`, `.github/skills/`, `.github/workflows/`, `.github/ISSUE_TEMPLATE/`, `.github/instructions/`, `.github/codeql/` | The accelerators: seven custom agents (`<phase>-github`), their skills, workflows, and issue forms. `*.lock.yml` files are compiled by gh-aw v1.2.2 from the `.md` file next to them: never edit them by hand. |
+| `planning/` | Plan: the workshop notes and policies a brief cites, Copilot's task, and the publisher's unit tests. |
+| `docs/architecture/` | Design: the approved standards, the reviewed brief, Copilot CLI's task, and the ADRs in `adr/`. |
+| `docs/runbooks/` | Runbooks, such as the incident triage with Copilot CLI. |
+| `tests/` | Unit tests of the accelerators' scripts (Test, Release, Operate): `python -m unittest discover -s tests`. |
+| `solutions/05-secure-github/` | Secure: the lab patch, the regression reference, the replay setup, and their unit tests. Never apply the lab patch to `main`. |
+| `tools/check_landing_zone.py` | Checks that every accelerator is installed, set up, and green. |
 
 ## Build and test
 
 - API and worker: `dotnet test --solution app/RequestHub.slnx` (needs PostgreSQL on `localhost:5432`, user `requesthub`, password `devpass`; the Copilot cloud agent environment starts one automatically).
 - Web UI: `npm ci --prefix app/web`, then `npm run typecheck --prefix app/web`, `npm test --prefix app/web`, `npm run build --prefix app/web`.
 - Run locally: `dotnet run --project app/src/RequestHub.Api` (persona switcher, http://localhost:5080).
+- The accelerators' scripts: Python 3.12+, standard library plus `jsonschema` (`pip install -r planning/requirements.txt`). Set `PYTHONDONTWRITEBYTECODE=1` before running their tests, so no `__pycache__` lands in `.github/` or `tests/`.
 
 ## Rules
 
