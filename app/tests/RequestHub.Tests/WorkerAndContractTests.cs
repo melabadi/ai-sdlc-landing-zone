@@ -63,6 +63,14 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         return n.Id;
     }
 
+    private static async Task DeleteNotificationsAsync(RequestHubDbContext db, params Guid[] ids)
+    {
+        db.ChangeTracker.Clear();
+        var notifications = await db.Notifications.Where(n => ids.Contains(n.Id)).ToListAsync();
+        db.Notifications.RemoveRange(notifications);
+        await db.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task Failed_delivery_is_retried_then_succeeds_exactly_once()
     {
@@ -106,16 +114,22 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         await using var scope = api.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
         var id = await PendingNotificationAsync(db);
-        var processor = Processor(db, new TimeoutSender(id), maxAttempts: 5, baseBackoffSeconds: 60);
+        try
+        {
+            var processor = Processor(db, new TimeoutSender(id), maxAttempts: 5, baseBackoffSeconds: 60);
+            await processor.ProcessBatchAsync(CancellationToken.None);
 
-        await processor.ProcessBatchAsync(CancellationToken.None);
-
-        db.ChangeTracker.Clear();
-        var n = await db.Notifications.SingleAsync(x => x.Id == id);
-        Assert.Equal(NotificationStatus.Pending, n.Status);
-        Assert.Equal(1, n.Attempts);
-        Assert.Contains("timed out", n.LastError);
-        Assert.True(n.NextAttemptAt > DateTimeOffset.UtcNow);
+            db.ChangeTracker.Clear();
+            var n = await db.Notifications.SingleAsync(x => x.Id == id);
+            Assert.Equal(NotificationStatus.Pending, n.Status);
+            Assert.Equal(1, n.Attempts);
+            Assert.Contains("timed out", n.LastError);
+            Assert.True(n.NextAttemptAt > DateTimeOffset.UtcNow);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, id);
+        }
     }
 
     [Fact]
@@ -125,16 +139,22 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
         var failedBefore = await db.Notifications.CountAsync(n => n.Status == NotificationStatus.Failed);
         var id = await PendingNotificationAsync(db);
-        var processor = Processor(db, new TimeoutSender(id), maxAttempts: 1);
+        try
+        {
+            var processor = Processor(db, new TimeoutSender(id), maxAttempts: 1);
+            await processor.ProcessBatchAsync(CancellationToken.None);
 
-        await processor.ProcessBatchAsync(CancellationToken.None);
-
-        db.ChangeTracker.Clear();
-        var n = await db.Notifications.SingleAsync(x => x.Id == id);
-        Assert.Equal(NotificationStatus.Failed, n.Status);
-        Assert.Equal(1, n.Attempts);
-        Assert.Contains("timed out", n.LastError);
-        Assert.Equal(failedBefore + 1, (await processor.GetBacklogAsync(CancellationToken.None)).Failed);
+            db.ChangeTracker.Clear();
+            var n = await db.Notifications.SingleAsync(x => x.Id == id);
+            Assert.Equal(NotificationStatus.Failed, n.Status);
+            Assert.Equal(1, n.Attempts);
+            Assert.Contains("timed out", n.LastError);
+            Assert.Equal(failedBefore + 1, (await processor.GetBacklogAsync(CancellationToken.None)).Failed);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, id);
+        }
     }
 
     [Fact]
@@ -143,17 +163,21 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         await using var scope = api.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
         var id = await PendingNotificationAsync(db);
-        using var cts = new CancellationTokenSource();
-        var processor = Processor(db, new TimeoutSender(id, cts), maxAttempts: 5);
+        try
+        {
+            using var cts = new CancellationTokenSource();
+            var processor = Processor(db, new TimeoutSender(id, cts), maxAttempts: 5);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processor.ProcessBatchAsync(cts.Token));
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processor.ProcessBatchAsync(cts.Token));
-
-        db.ChangeTracker.Clear();
-        var n = await db.Notifications.SingleAsync(x => x.Id == id);
-        Assert.Equal(NotificationStatus.Pending, n.Status);
-        Assert.Equal(0, n.Attempts);
-        db.Notifications.Remove(n);
-        await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+            var n = await db.Notifications.SingleAsync(x => x.Id == id);
+            Assert.Equal(NotificationStatus.Pending, n.Status);
+            Assert.Equal(0, n.Attempts);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, id);
+        }
     }
 
     [Fact]
@@ -163,20 +187,27 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
         var timedOutId = await PendingNotificationAsync(db);
         var sentId = await PendingNotificationAsync(db);
-        var sender = new TimeoutSender(timedOutId);
-        var processor = Processor(db, sender, maxAttempts: 5, batchSize: 2, baseBackoffSeconds: 60);
+        try
+        {
+            var sender = new TimeoutSender(timedOutId);
+            var processor = Processor(db, sender, maxAttempts: 5, batchSize: 2, baseBackoffSeconds: 60);
 
-        Assert.Equal(2, await processor.ProcessBatchAsync(CancellationToken.None));
+            Assert.Equal(2, await processor.ProcessBatchAsync(CancellationToken.None));
 
-        db.ChangeTracker.Clear();
-        var timedOut = await db.Notifications.SingleAsync(x => x.Id == timedOutId);
-        var sent = await db.Notifications.SingleAsync(x => x.Id == sentId);
-        Assert.Equal(NotificationStatus.Pending, timedOut.Status);
-        Assert.Equal(1, timedOut.Attempts);
-        Assert.Equal(NotificationStatus.Sent, sent.Status);
-        Assert.Equal(1, sent.Attempts);
-        Assert.Equal(0, await processor.ProcessBatchAsync(CancellationToken.None));
-        Assert.Equal(2, sender.Calls.Count);
+            db.ChangeTracker.Clear();
+            var timedOut = await db.Notifications.SingleAsync(x => x.Id == timedOutId);
+            var sent = await db.Notifications.SingleAsync(x => x.Id == sentId);
+            Assert.Equal(NotificationStatus.Pending, timedOut.Status);
+            Assert.Equal(1, timedOut.Attempts);
+            Assert.Equal(NotificationStatus.Sent, sent.Status);
+            Assert.Equal(1, sent.Attempts);
+            Assert.Equal(0, await processor.ProcessBatchAsync(CancellationToken.None));
+            Assert.Equal(2, sender.Calls.Count);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, timedOutId, sentId);
+        }
     }
 
     [Fact]
