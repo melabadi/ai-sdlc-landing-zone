@@ -33,7 +33,7 @@ The current live provider does not yet satisfy BR-3: its prompt includes request
 | A. In-process provider calling Foundry directly | Select a live implementation of `ITriageProvider` in the existing API. It calls a managed Foundry endpoint from the API container. | **Prefer.** No new app deployable or gateway to operate. Fits STD-ARCH-001 v1.0 and STD-OPS-001 v1.0. | **Reject for production.** Direct model calls violate STD-OPS-002 v2.0 and do not provide its central per-department controls. | Lowest deployment complexity and hop count, but no central quota or usage enforcement. |
 | B. In-process provider calling Foundry through the central APIM AI gateway | Keep triage in the API and use a gateway-backed provider/adapter. The gateway applies quotas, rate limits, and usage reporting before forwarding to Foundry. | **Use only if an existing platform team operates it.** Otherwise it adds an operated gateway dependency contrary to STD-OPS-001 v1.0. | **Prefer.** It meets STD-OPS-002 v2.0 while retaining the existing API and extension point under STD-ARCH-001 v1.0. | Adds a hop and requires a gateway-compatible Foundry/tool-call protocol, but provides enterprise controls without a new RequestHub deployable. |
 
-Both options require the same data minimization, identity, authorization, human-decision boundary, audit, timeout, language, and retention safeguards. Neither may send attachments or personal data, and neither may apply a recommendation automatically.
+Both options require the same data minimization, identity, authorization, human-decision boundary, audit, timeout, language, and retention safeguards. Neither may send attachments or personal data, and neither may apply a recommendation automatically. Since title and description are user-entered free text, an allowlist alone does not enforce the personal-data prohibition. Neither profile may be enabled until a designated privacy/security policy owner decides the pre-egress handling and its acceptance cases.
 
 ### Option A: In-process provider calling Foundry directly
 
@@ -70,9 +70,11 @@ flowchart LR
     Decide --> DB
   end
   Provider -->|small team only allowed fields| Foundry[Foundry agent]
-  Provider -->|enterprise only allowed fields and gateway metadata| APIM[Central APIM AI gateway]
-  APIM --> Foundry
-  Foundry -->|structured suggestion and trace id| Provider
+  Foundry -->|small team structured suggestion and trace id| Provider
+  Provider -->|enterprise allowed fields and gateway metadata| APIM[Central APIM AI gateway]
+  APIM -->|enterprise model requests| Foundry
+  Foundry -->|enterprise model responses| APIM
+  APIM -->|enterprise responses only| Provider
   Platform[Platform team] -.->|quotas rate limits and usage| APIM
 ```
 
@@ -90,17 +92,26 @@ sequenceDiagram
   WF->>WF: Load request and check department access
   WF->>Provider: Local context with title description and category
   alt Small team direct profile
-    Provider->>AI: Allowed fields only
+    Provider->>AI: Initial request with allowed fields
+    AI-->>Provider: Tool call for get_routing_policies
   else Enterprise gateway profile
-    Provider->>Gateway: Allowed fields and gateway-only quota metadata
+    Provider->>Gateway: Initial request with allowed fields and gateway-only quota metadata
     Gateway->>AI: Allowed fields only
+    AI-->>Gateway: Tool call for get_routing_policies
+    Gateway-->>Provider: Tool call
   end
-  AI-->>Provider: Request get_routing_policies for category
   Provider->>WF: Invoke server-bound policy tool
   WF->>DB: Audit actor time tool and structured return evidence
   WF-->>Provider: Approved policies with ids and versions
-  Provider->>AI: Approved policy fields
-  AI-->>Provider: Structured recommendation and trace id
+  alt Small team direct profile
+    Provider->>AI: Continuation with approved policy fields
+    AI-->>Provider: Structured recommendation and trace id
+  else Enterprise gateway profile
+    Provider->>Gateway: Continuation with approved policy fields and gateway-only quota metadata
+    Gateway->>AI: Approved policy fields only
+    AI-->>Gateway: Structured recommendation and trace id
+    Gateway-->>Provider: Structured recommendation and trace id
+  end
   Provider-->>WF: Proposed department priority rationale and citations
   WF->>WF: Validate result and apply policy conflict guard
   WF->>DB: Save recommendation and recommendation audit
@@ -142,6 +153,7 @@ No API change is required. If a later decision requires a locale or gateway-cont
 ## Threat model checklist
 
 - [ ] Before sending any request to the model, enforce an allowlist of title, description, category, and approved policy fields. Do not send request ids, department names, current department, priority, attachments, comments, or personal data (STD-SEC-002 v1.1).
+- [ ] Do not enable either profile until a designated privacy/security policy owner decides and records how personal data in title or description is handled before egress, with acceptance cases; the allowlist alone is not that safeguard (STD-SEC-002 v1.1).
 - [ ] Authenticate app-to-Foundry or app-to-APIM with the API workload identity. Store no API keys or shared secrets and disable key authentication where supported (STD-SEC-001 v2.0).
 - [ ] Expose only `get_routing_policies(category)` to the model. The API binds it to the authorized workflow context, reads only approved policies, records the actor and time, and does not allow arbitrary request ids or writes (STD-AI-001 v1.0).
 - [ ] Record tool return evidence as structured identifiers and outcome, such as policy ids and versions, not full user text or the raw tool response. Confirm that this satisfies BR-4.
@@ -150,7 +162,7 @@ No API change is required. If a later decision requires a locale or gateway-cont
 - [ ] Emit OpenTelemetry spans and outcome/duration metrics without request text. Persist the provider response id and correlate it with the request (STD-OBS-001 v1.2, STD-AI-002 v1.0 for enterprise).
 - [ ] On timeout or provider failure, show an unavailable state within two seconds of timeout and leave manual routing usable (STD-OBS-001 v1.2).
 - [ ] For enterprise, verify APIM applies department quotas, rate limits, and usage reporting. Ensure any quota metadata is server-derived and is not forwarded to the model (STD-OPS-002 v2.0).
-- [ ] Delete recommendation and AI audit records at the profile retention limit while retaining business decisions for seven years (STD-DATA-001 v1.0, STD-DATA-002 v1.0).
+- [ ] Delete small-team recommendations after 90 days, but do not apply that limit to AI audit entries. Preserve small-team BR-4 audit evidence until a person approves an audit-retention rule. Delete enterprise recommendations and their audit entries after 13 months, while retaining business decisions for seven years (STD-DATA-001 v1.0, STD-DATA-002 v1.0).
 
 ## Consequences
 
@@ -159,16 +171,17 @@ No API change is required. If a later decision requires a locale or gateway-cont
 - The six-second initial provider budget is a target to verify, not a guarantee. A slow provider can yield an unavailable recommendation while manual routing continues.
 - Enterprise gains central usage controls but incurs gateway latency and platform coordination. Small team avoids that dependency.
 - English and French recommendation language and the selected locale source need a product decision because the recommendation endpoint has no locale field.
-- Small-team recommendations are retained 90 days. Enterprise recommendations and their audit entries are retained 13 months. Business decisions retain the seven-year rule.
+- Small-team recommendations are retained 90 days. The retention period for small-team AI audit entries is unresolved, so BR-4 evidence must not be deleted under the recommendation limit. Enterprise recommendations and their audit entries are retained 13 months. Business decisions retain the seven-year rule.
 
 ## Implementation tasks
 
-1. **API/core engineer:** Narrow the provider serialization and tool schema to the exact BR-3 allowlist. Remove the model-facing request-read tool and all outbound request ids, department names, current department, and current priority. Keep policy-tool access server-bound to the already-authorized request. **Acceptance:** deterministic tests inspect the outbound prompt/tool payload and prove only title, description, category, and approved policy fields leave the API, including when a tool request supplies an arbitrary id.
+1. **API/core engineer:** Narrow the provider serialization and tool schema to the exact BR-3 allowlist. Remove the model-facing request-read tool and all outbound request ids, department names, current department, and current priority. Keep policy-tool access server-bound to the already-authorized request. **Acceptance:** neither profile can be enabled before the pre-egress policy in task 7 is approved and implemented; deterministic tests then inspect the outbound prompt/tool payload, prove personal data is handled as approved, and prove only permitted fields leave the API, including when a tool request supplies an arbitrary id.
 2. **API/core engineer:** Add structured audit return evidence for each assistant tool call and recommendation, including actor, time, tool, outcome, and returned policy identifiers/versions or recommendation identifiers. Do not store raw prompt, completion, or free-text tool output. **Acceptance:** tests verify those audit fields and prove request text, prompt, completion, and raw tool response are absent.
 3. **Platform engineer:** Configure small-team direct Foundry access and enterprise APIM-only access using workload identity. Confirm whether APIM supports the Foundry response and function-call protocol. Configure enterprise department quotas, rate limits, usage reporting, and server-derived control metadata without forwarding it to the model. **Acceptance:** deployment evidence shows successful identity auth, observed quota enforcement, and no direct production model route for enterprise.
 4. **API/SRE engineer:** Set a bounded provider timeout within the 8-second response budget and add dependency spans, duration/outcome metrics, and failure handling. **Acceptance:** measured p95 is at most 8 seconds, and a forced timeout or outage produces a visible unavailable response within two seconds after timeout while routing remains usable.
-5. **Data/platform owner:** Implement and verify profile-specific deletion of AI recommendations and audit entries after 90 days for small team or 13 months for enterprise, without deleting seven-year business decisions. **Acceptance:** retention tests prove each expiry and decision preservation. For enterprise, attach a versioned evaluation dataset with at least ten labeled cases including adversarial cases and results to release evidence (STD-AI-002 v1.0).
+5. **Data/platform owner:** Delete small-team recommendations after 90 days and enterprise recommendations and audit entries after 13 months, without deleting seven-year business decisions. Implement small-team AI audit deletion only after a person approves and records its retention rule. **Acceptance:** tests prove the recommendation and enterprise audit expiries, preserve small-team AI audit evidence while no rule is approved, and preserve business decisions. For enterprise, attach a versioned evaluation dataset with at least ten labeled cases including adversarial cases and results to release evidence (STD-AI-002 v1.0).
 6. **Product/localization owner:** Choose caller locale behavior and provide English and French recommendation output without adding a required API field. **Acceptance:** API/UI scenarios verify both languages and identify the locale source.
+7. **Privacy/security policy owner:** Decide and record the pre-egress handling for personal data that may appear in title and description, including acceptance cases, before either profile is enabled. **Acceptance:** an approved policy specifies the rejection or redaction boundary and its test cases; neither profile sends free text until those tests pass.
 
 ## Open questions
 
@@ -179,3 +192,5 @@ No API change is required. If a later decision requires a locale or gateway-cont
 5. **Latency:** Is a six-second provider deadline sufficient for the model and policy-tool round trip while preserving recommendation quality at p95? Validate with representative traffic before adopting the timeout.
 6. **Language:** Should the assistant answer in the caller's preferred language, the UI locale, or another product-selected language? The current public recommendation operation has no locale input.
 7. **Rationale handling:** What validation or redaction is required if a structured rationale echoes free text from the request? The recommendation needs a rationale, while STD-SEC-002 v1.1 forbids persisting raw completions containing user free text.
+8. **Personal data before egress:** Title and description can contain personal data, and STD-SEC-002 v1.1 prohibits sending it but does not define detection or handling. Which pre-egress rejection or redaction policy and acceptance cases will the designated privacy/security policy owner approve? Neither profile may be enabled until this is decided and tested.
+9. **Small-team audit retention:** STD-DATA-002 v1.0 sets 90 days for recommendations only, not audit entries. What retention rule should a person approve for small-team AI audit evidence required by BR-4? Until then, retain the evidence and do not delete it under the recommendation rule.
