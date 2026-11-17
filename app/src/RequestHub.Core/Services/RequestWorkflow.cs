@@ -542,8 +542,15 @@ public sealed partial class RequestWorkflow(
             .ExecuteUpdateAsync(update => update.SetProperty(r => r.UpdatedAt, r => r.UpdatedAt), ct);
         if (ownsRequestSnapshot != 1)
         {
+            var pendingToolCallAudits = db.ChangeTracker.Entries<AuditEvent>()
+                .Where(entry => entry.State == EntityState.Added && entry.Entity.Action == "triage.tool_call")
+                .Select(entry => entry.Entity)
+                .ToList();
             await transaction.RollbackAsync(ct);
+            await transaction.DisposeAsync();
             db.ChangeTracker.Clear();
+            db.AuditEvents.AddRange(pendingToolCallAudits);
+            await db.SaveChangesAsync(ct);
             return new WorkflowError("recommendation.stale", "The request changed while the recommendation was being generated. Review the current request and try again.", 409);
         }
 
