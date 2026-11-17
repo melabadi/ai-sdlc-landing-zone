@@ -533,6 +533,20 @@ public sealed partial class RequestWorkflow(
             };
         }
 
+        // The provider ran without a database lock. Compare the request's xmin snapshot and hold
+        // the row lock through persistence so a confirmation/reroute cannot complete between this
+        // check and saving a recommendation based on the old department.
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var ownsRequestSnapshot = await db.Requests
+            .Where(r => r.Id == request.Id && r.Version == request.Version)
+            .ExecuteUpdateAsync(update => update.SetProperty(r => r.UpdatedAt, r => r.UpdatedAt), ct);
+        if (ownsRequestSnapshot != 1)
+        {
+            await transaction.RollbackAsync(ct);
+            db.ChangeTracker.Clear();
+            return new WorkflowError("recommendation.stale", "The request changed while the recommendation was being generated. Review the current request and try again.", 409);
+        }
+
         foreach (var previous in request.Recommendations.Where(x => x.Status == RecommendationStatus.Proposed))
         {
             previous.Status = RecommendationStatus.Superseded;
@@ -567,6 +581,7 @@ public sealed partial class RequestWorkflow(
             guard = conflictGuard ? "policy-conflict" : null,
         });
         await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
         RequestHubTelemetry.TriageCalls.Add(1, new KeyValuePair<string, object?>("provider", triage.Id), new KeyValuePair<string, object?>("outcome", "ok"));
         return Result<RecommendationDto>.Ok(ToDto(recommendation, new PersonRef(user.Id, user.DisplayName)));
     }
