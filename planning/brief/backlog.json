@@ -1,0 +1,326 @@
+{
+  "scenario": "assisted-triage-brief",
+  "brief": {
+    "problem": {
+      "text": "Requests can reach the wrong department and sit there before anyone notices; reviewers report frequent manual rerouting, but its rate has not been measured.",
+      "sources": [
+        "T01",
+        "T02"
+      ]
+    },
+    "goals": [
+      {
+        "text": "Reduce the time requests wait before reaching the right team.",
+        "sources": [
+          "T01"
+        ]
+      },
+      {
+        "text": "Give reviewers advisory department and priority suggestions with an explanation of the routing policies used.",
+        "sources": [
+          "T03",
+          "T08"
+        ]
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "text": "For each new request, provide a suggested department and priority.",
+        "priority": "must",
+        "sources": [
+          "T03"
+        ]
+      },
+      {
+        "id": "R2",
+        "text": "Show a short rationale and the IDs and versions of the routing policies used for each suggestion.",
+        "priority": "must",
+        "sources": [
+          "T08"
+        ]
+      },
+      {
+        "id": "R3",
+        "text": "Send the AI service only the request title, description, category, approved routing policies, and requester department; do not send attachments or other personal data.",
+        "priority": "must",
+        "sources": [
+          "T09"
+        ]
+      },
+      {
+        "id": "R4",
+        "text": "Support English and French requests.",
+        "priority": "must",
+        "sources": [
+          "T11"
+        ]
+      },
+      {
+        "id": "R5",
+        "text": "When a request is rerouted after a suggestion, show that the suggestion is stale.",
+        "priority": "must",
+        "sources": [
+          "T10"
+        ]
+      },
+      {
+        "id": "R6",
+        "text": "Audit each recommendation and each assistant lookup, including who asked, when, and what was returned.",
+        "priority": "must",
+        "sources": [
+          "T13"
+        ]
+      },
+      {
+        "id": "R7",
+        "text": "If the AI service is unavailable, clearly show that it is unavailable and let reviewers continue routing manually.",
+        "priority": "must",
+        "sources": [
+          "T14"
+        ]
+      },
+      {
+        "id": "R8",
+        "text": "A confidence score may be shown, but confidence must not be used to sort or filter suggestions in this release.",
+        "priority": "should",
+        "sources": [
+          "T15"
+        ]
+      },
+      {
+        "id": "R9",
+        "text": "A double click on routing confirmation must not create duplicate audit entries or notifications.",
+        "priority": "must",
+        "sources": [
+          "T16"
+        ]
+      },
+      {
+        "id": "R10",
+        "text": "Safety hazards route to Facilities with Urgent priority regardless of the request category.",
+        "priority": "must",
+        "sources": [
+          "T17",
+          "POL-ROUTE-006"
+        ]
+      },
+      {
+        "id": "R11",
+        "text": "Recommendations remain advisory and require reviewer confirmation for routing; only an authorized approver may approve or reject a request.",
+        "priority": "must",
+        "sources": [
+          "T04",
+          "T19",
+          "POL-GOV-001"
+        ]
+      }
+    ],
+    "outOfScope": [
+      {
+        "text": "Automatic routing without reviewer confirmation in this release.",
+        "sources": [
+          "T19"
+        ]
+      },
+      {
+        "text": "Automatic approval of any kind and email notifications to requesters.",
+        "sources": [
+          "T20"
+        ]
+      }
+    ],
+    "successMeasures": [
+      {
+        "text": "Measure the share of requests rerouted after triage, collecting a two-week baseline before enabling the assistant.",
+        "sources": [
+          "T23"
+        ]
+      }
+    ]
+  },
+  "epic": {
+    "id": "EPIC-ASSISTED-TRIAGE",
+    "title": "Assisted request triage",
+    "summary": "Provide policy-grounded, advisory routing suggestions that reviewers can understand and confirm, while preserving manual routing, approval authority, privacy, and an auditable workflow.",
+    "acceptanceCriteria": [
+      "Given a new request, When an authorized reviewer requests triage, Then the reviewer receives an advisory department and priority suggestion with a rationale and cited routing policy versions.",
+      "Given a reviewer has received a suggestion, When the request is rerouted or the reviewer confirms routing, Then the suggestion state and resulting audit trail reflect the current request without duplicate confirmation effects.",
+      "Given the assistant is unavailable, When a reviewer opens the request for triage, Then the interface explains the unavailability and supports manual routing."
+    ],
+    "sources": [
+      "T03",
+      "T08",
+      "T10",
+      "T13",
+      "T14",
+      "T16",
+      "T19",
+      "POL-GOV-001"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "TASK-1",
+      "title": "Generate policy-grounded recommendations safely",
+      "description": "Generate advisory department and priority suggestions with rationale and policy ID/version references, while enforcing the approved input-data boundary and supported routing rules. Do not encode precedence between POL-ROUTE-001 and POL-ROUTE-004 for expensive computing equipment until a human decision is recorded.",
+      "ownerRole": "Backend engineer",
+      "acceptanceCriteria": [
+        "Given a new request and the approved routing policies, When a recommendation is generated, Then it includes a suggested department, priority, short rationale, and the IDs and versions of the policies it used.",
+        "Given a recommendation is requested, When request data is sent to the AI service, Then only the title, description, category, approved routing policies, and requester department are sent, with no attachments or other personal data.",
+        "Given a request reports a safety hazard, When its recommendation is generated, Then it suggests Facilities and Urgent priority regardless of category.",
+        "Given a request lacks information needed to identify its owning department, When a recommendation is generated, Then it keeps the current department, flags the request for human review, and asks one clarifying question.",
+        "Given a request is submitted in English or French, When a recommendation is generated, Then the assistant supports that language."
+      ],
+      "sources": [
+        "T03",
+        "T08",
+        "T09",
+        "T11",
+        "T17",
+        "T06",
+        "T07",
+        "POL-ROUTE-006",
+        "POL-ROUTE-007",
+        "POL-ROUTE-001",
+        "POL-ROUTE-004"
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "TASK-2",
+      "title": "Present recommendations and manual fallback",
+      "description": "Show reviewers the recommendation details and state in the request workflow, including stale recommendations, confidence without confidence-based sorting or filtering, and clear manual-routing behavior when the assistant is unavailable.",
+      "ownerRole": "Frontend engineer",
+      "acceptanceCriteria": [
+        "Given a request has a recommendation, When a reviewer views it, Then the suggested department, priority, rationale, policy IDs and versions are visible, and any confidence score is not used to sort or filter suggestions.",
+        "Given a request has been rerouted after a recommendation, When a reviewer views the recommendation, Then the interface identifies it as stale.",
+        "Given the AI service is unavailable, When a reviewer attempts triage, Then the interface clearly reports unavailability and allows the reviewer to route the request manually.",
+        "Given a reviewer uses the interface in English or French, When recommendation details are displayed, Then the workflow supports that language."
+      ],
+      "sources": [
+        "T08",
+        "T10",
+        "T11",
+        "T12",
+        "T14",
+        "T15"
+      ],
+      "dependsOn": [
+        "TASK-1"
+      ]
+    },
+    {
+      "id": "TASK-3",
+      "title": "Confirm routing once with reviewer authority",
+      "description": "Connect reviewer confirmation to the request-routing workflow without allowing the recommendation to make a decision, and make repeated confirmation safe against duplicate audit entries and notifications.",
+      "ownerRole": "Full-stack engineer",
+      "acceptanceCriteria": [
+        "Given an advisory routing suggestion is displayed, When a reviewer confirms it, Then the request is routed only after that reviewer action and the suggestion does not approve or reject the request.",
+        "Given a user is not authorized to confirm routing, When they attempt to confirm a suggestion, Then the routing is not changed.",
+        "Given a reviewer double-clicks confirmation, When the action is processed, Then it creates no more than one audit entry and no more than one notification.",
+        "Given a request is awaiting an approval decision, When a recommendation or routing confirmation is processed, Then only an authorized approver can approve or reject it."
+      ],
+      "sources": [
+        "T04",
+        "T16",
+        "T19",
+        "POL-GOV-001"
+      ],
+      "dependsOn": [
+        "TASK-1",
+        "TASK-2"
+      ]
+    },
+    {
+      "id": "TASK-4",
+      "title": "Audit assistant activity and establish the baseline",
+      "description": "Record recommendation and assistant lookup activity with the requested actor, time, and returned information, and capture the specified pre-launch rerouting baseline and ongoing share-of-rerouted measure without assuming a retention period.",
+      "ownerRole": "Backend engineer",
+      "acceptanceCriteria": [
+        "Given the assistant generates a recommendation or performs a lookup, When the activity completes, Then an audit record captures who asked, when, and what was returned.",
+        "Given the assistant has not yet been enabled, When the team establishes the success-measure baseline, Then it measures the share of requests rerouted after triage for two weeks before enablement.",
+        "Given routing outcomes are available after enablement, When the success measure is reported, Then it reports the share of requests rerouted after triage."
+      ],
+      "sources": [
+        "T13",
+        "T22",
+        "T23"
+      ],
+      "dependsOn": [
+        "TASK-1",
+        "TASK-3"
+      ]
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "Q1",
+      "question": "What response-time target defines \"fast\" for the assistant?",
+      "sources": [
+        "T12"
+      ],
+      "blocking": false
+    },
+    {
+      "id": "Q2",
+      "question": "What confidence threshold, if any, should determine whether a suggestion is hidden or shown? No threshold or hide behavior has been agreed.",
+      "sources": [
+        "T15"
+      ],
+      "blocking": false
+    },
+    {
+      "id": "Q3",
+      "question": "Who may override a suggestion: reviewers only, or approvers as well?",
+      "sources": [
+        "T21"
+      ],
+      "blocking": true
+    },
+    {
+      "id": "Q4",
+      "question": "How long should recommendations and related suggestion data be retained?",
+      "sources": [
+        "T22"
+      ],
+      "blocking": true
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "C1",
+      "summary": "The request for automatic routing without review conflicts with the requirement that routing recommendations remain advisory and reviewer-confirmed.",
+      "sources": [
+        "T04",
+        "T05",
+        "POL-GOV-001"
+      ],
+      "resolution": "The first release provides recommendations plus reviewer confirmation; automatic routing is deferred for reconsideration after data is available.",
+      "resolvedBy": "T19"
+    },
+    {
+      "id": "C2",
+      "summary": "The spend-threshold policy says requests above 5,000 route to Finance, while the statement about computing equipment says IT owns it regardless of cost; no precedence is specified for expensive computing equipment.",
+      "sources": [
+        "T06",
+        "T07",
+        "POL-ROUTE-001",
+        "POL-ROUTE-004"
+      ],
+      "resolution": null,
+      "resolvedBy": null
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "decision": "For the first release, triage recommendations are advisory and routing requires reviewer confirmation; only an authorized approver may approve or reject.",
+      "sources": [
+        "T04",
+        "T19",
+        "POL-GOV-001"
+      ]
+    }
+  ]
+}
