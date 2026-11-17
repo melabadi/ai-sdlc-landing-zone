@@ -27,7 +27,7 @@ flowchart TB
 
 - **Build your own:** [install the seven in your repository](#build-your-own-landing-zone), each with its README's commands, then the [one-time setup](#3-set-up-what-they-share-once) they share. Here the seven installs took 20 minutes 33 seconds, and the one-time setup about 5 more, apart from the token you create yourself.
 - **Files to edit to tweak it:** [the landing zone's own files](#files-to-edit-to-tweak-it), and each accelerator's list.
-- **Check it:** [`tools/check_landing_zone.py`](tools/check_landing_zone.py) reads the repository and reports, for every accelerator, whether it is installed, set up, and green: [47 checks passed](#the-wiring-check), and one warning for the token you add yourself.
+- **Check it:** [`tools/check_landing_zone.py`](tools/check_landing_zone.py) reads the repository and reports, for every accelerator, whether it is installed, set up, and green: [48 passed, 0 failed](#the-wiring-check).
 - **See how it was built:** [one pull request per accelerator](#how-this-landing-zone-was-built), each with what it copied, what it edited, and what it checked.
 
 ## Technologies used
@@ -91,6 +91,7 @@ Each phase name links to the accelerator's README: how it works, a recorded run 
 | Environment `release-github` | Deployments from `main` only; a required reviewer; administrators can't bypass it | The release approval waits for a person |
 | Actions | The workflow token reads by default and can't approve pull requests; runs from every external contributor's fork wait for approval | What the source repository asks of [a public copy](https://github.com/melabadi/adept-assessment-northstars/blob/main/CONTRIBUTING.md#settings-for-a-public-copy) |
 | Security | Secret scanning, push protection, Dependabot alerts, and private vulnerability reporting; CodeQL from Secure's scan on every push to `main`, with default setup off | Free on a public repository |
+| Copilot code review | **Block reviews requested with an external Copilot license**: in a personal repository, only the owner and direct collaborators can request a review | Outsiders can't start Copilot reviews here, even with their own Copilot license |
 
 On a public repository, outsiders start nothing that costs money, uses a token, or writes: each accelerator checks who wrote the text before Copilot reads it, and the agentic workflows keep gh-aw's protections. Each accelerator's README says what an outside contribution can and can't trigger.
 
@@ -187,7 +188,7 @@ gh workflow run secure-github-verify.yml --ref main
 gh secret set COPILOT_GITHUB_TOKEN    # paste the token when prompted
 ```
 
-Create the token from [this link](https://github.com/settings/personal-access-tokens/new?name=COPILOT_GITHUB_TOKEN&description=GitHub+Agentic+Workflows+-+Copilot+engine+authentication&user_copilot_requests=read), with your account as the resource owner. Its owner's Copilot plan pays for the agentic workflows' runs. Then turn on **Only allow Copilot code review to be triggered by authorized users** under **Settings** → **Copilot** → **Code review**.
+Create the token from [this link](https://github.com/settings/personal-access-tokens/new?name=COPILOT_GITHUB_TOKEN_LANDING_ZONE&description=GitHub+Agentic+Workflows+-+Copilot+engine+authentication&expires_in=90&user_copilot_requests=read): it opens the form with your account as the resource owner, read-only access to public repositories, a 90-day expiry, and one permission, **Copilot Requests: Read**. Token names are unique in an account, so rename it if you have one by that name. Its owner's Copilot plan pays for the agentic workflows' runs. Then turn on **Block reviews requested with an external Copilot license** under **Settings** → **Copilot** → **Code review**: in a personal repository, only the owner and direct collaborators can then request a review.
 
 ### 4. Check the wiring
 
@@ -213,13 +214,13 @@ Each accelerator's README lists its own files under *Files to edit to tweak it*.
 
 [`tools/check_landing_zone.py`](tools/check_landing_zone.py) reads the repository through GitHub CLI and changes nothing. For the shared foundation, each accelerator, and the governance settings, it checks the files on `main`, the workflows GitHub registered, the latest result of each deterministic check, the labels, the environment, the variable, the secret, the ruleset, and the security settings. Run it signed in as an administrator: secrets, environments, and Actions settings are visible only to them. It exits with 1 when a line fails.
 
-Its run on 16 November 2026, before the token was added, ended with `47 passed, 1 warning, 0 failed`:
+Its run on 17 November 2026, once the one-time setup was done, ended with `48 passed, 0 warnings, 0 failed`:
 
 <details>
 <summary>The full output</summary>
 
 ```text
-Landing zone check: melabadi/ai-sdlc-landing-zone, main at 9b7beb2, 2026-11-16 23:00 UTC
+Landing zone check: melabadi/ai-sdlc-landing-zone, main at d081230, 2026-11-17 12:38 UTC
 
 Shared foundation
   PASS  Copilot's instructions, CI, Copilot setup steps, and the licence  (4 on main)
@@ -227,7 +228,7 @@ Shared foundation
   PASS  latest run of copilot-setup-steps.yml  (success, push run 43970873571 on main at 2026-11-16T22:32:28Z)
   PASS  labels ai-sdlc
   PASS  the Copilot cloud agent can be assigned Issues
-  WARN  secret COPILOT_GITHUB_TOKEN, for the four agentic workflows  (only the agentic workflows need it; see the README's one-time setup)
+  PASS  secret COPILOT_GITHUB_TOKEN, for the four agentic workflows
 
 01-plan-github (Plan)
   PASS  agent plan-github, skills requirements-traceability, backlog-publish, issue form  (7 on main)
@@ -239,14 +240,14 @@ Shared foundation
   PASS  agent design-github, skills architecture-decision, contract-impact, issue form  (7 on main)
   PASS  3 workflows registered and active  (design-github-review.yml, design-github-agentic-review.lock.yml, design-github-checks.yml)
   PASS  labels phase:design, adr-needed, standards-conflict
-  PASS  latest run of design-github-review.yml  (success, pull_request run 43974209356 on ci-on-every-pull-request at 2026-11-16T22:53:03Z)
+  PASS  latest run of design-github-review.yml  (success, pull_request run 43976137963 on readme-diagram-edge at 2026-11-16T23:05:38Z)
   PASS  latest run of design-github-checks.yml  (success, pull_request run 43973635391 on add-operate-github at 2026-11-16T22:49:24Z)
 
 03-develop-github (Develop)
   PASS  agent develop-github, skills bounded-feature, regression-validation, issue form  (4 on main)
   PASS  1 workflow registered and active  (develop-github-bounds.yml)
   PASS  labels phase:develop
-  PASS  latest run of develop-github-bounds.yml  (success, pull_request run 43974209337 on ci-on-every-pull-request at 2026-11-16T22:52:58Z)
+  PASS  latest run of develop-github-bounds.yml  (success, pull_request run 43976138183 on readme-diagram-edge at 2026-11-16T23:05:37Z)
 
 04-test-github (Test)
   PASS  agent test-github, skills failure-reproduction, review-evidence, ci-investigation, issue form  (7 on main)
@@ -259,9 +260,9 @@ Shared foundation
   PASS  3 workflows registered and active  (secure-github-checks.yml, secure-github-verify.yml, secure-github-scan.yml)
   PASS  labels phase:secure
   PASS  latest run of secure-github-checks.yml  (success, push run 43973048049 on main at 2026-11-16T22:45:26Z)
-  PASS  latest run of secure-github-scan.yml  (success, push run 43974614002 on main at 2026-11-16T22:57:31Z)
+  PASS  latest run of secure-github-scan.yml  (success, push run 43976502881 on main at 2026-11-16T23:09:43Z)
   PASS  variable SECURE_REPLAY_PR, the nightly replay's repair  (pull request #9)
-  PASS  latest run of secure-github-verify.yml  (success, workflow_dispatch run 43974347725 on main at 2026-11-16T22:54:51Z)
+  PASS  latest run of secure-github-verify.yml  (success, schedule run 44021855439 on main at 2026-11-17T05:08:52Z)
 
 06-release-github (Release)
   PASS  agent release-github, skills release-evidence, workflow-investigation  (4 on main)
@@ -287,12 +288,12 @@ Governance
   PASS  private vulnerability reporting
   PASS  Dependabot alerts
 
-47 passed, 1 warning, 0 failed
+48 passed, 0 warnings, 0 failed
 ```
 
 </details>
 
-The warning is the token: only the four agentic workflows need it, and you create it yourself.
+Without `COPILOT_GITHUB_TOKEN`, its line is a warning, not a failure: only the four agentic workflows need the token.
 
 ## How this landing zone was built
 
@@ -304,7 +305,9 @@ On 16 November 2026, a GitHub Copilot agent session working for the repository o
 | [#1](https://github.com/melabadi/ai-sdlc-landing-zone/pull/1) to [#7](https://github.com/melabadi/ai-sdlc-landing-zone/pull/7) | The seven accelerators, in phase order: from the first pull request's creation (22:30:06 UTC) to the seventh's merge (22:50:39), 20 minutes 33 seconds |
 | [#8](https://github.com/melabadi/ai-sdlc-landing-zone/pull/8) | CI on every pull request, so the ruleset can require it; the ruleset followed |
 | [#9](https://github.com/melabadi/ai-sdlc-landing-zone/pull/9) | Secure's reference repair for the nightly replay, closed by `replay_setup.py`: it is never merged |
-| This README's pull request | The README, the check, and the repository map in Copilot's instructions |
+| [#10](https://github.com/melabadi/ai-sdlc-landing-zone/pull/10) and [#11](https://github.com/melabadi/ai-sdlc-landing-zone/pull/11) | This README, the wiring check, and the repository map in Copilot's instructions |
+
+On 17 November, the same session finished the one-time setup in the owner's browser. It created `COPILOT_GITHUB_TOKEN_LANDING_ZONE`, a fine-grained token with Copilot Requests: Read only, which expires on 15 February 2027, stored it as `COPILOT_GITHUB_TOKEN`, and turned on *Block reviews requested with an external Copilot license*. When the token expires, the four agentic workflows fail until you store a new one; everything else keeps working.
 
 Nothing in this repository has run Copilot yet: the landing zone is ready for each accelerator's first use.
 
@@ -313,12 +316,12 @@ Nothing in this repository has run Copilot yet: the landing zone is ready for ea
 Each README's *Use it the first time* applies here, with the paths above. The feature, the defect lab, and the sample incident of the recorded runs stayed in the source repository, as the copy steps leave them: use them for a first run.
 
 - **Plan:** the notes are in [`planning/inputs/`](planning/inputs/). On a new branch, run `copilot --agent plan-github --allow-all-tools -p (Get-Content planning/refine-task.md -Raw)`, open the pull request, then apply `brief-approved`.
-- **Design:** on a new branch, run `copilot --agent design-github --allow-all-tools -p (Get-Content docs/architecture/adr-task.md -Raw)`, or comment `/design-review` on an Issue once the token is set.
+- **Design:** on a new branch, run `copilot --agent design-github --allow-all-tools -p (Get-Content docs/architecture/adr-task.md -Raw)`, or comment `/design-review` on an Issue.
 - **Develop:** file the feature from [`feature-issue.md`](https://github.com/melabadi/adept-assessment-northstars/blob/main/solutions/03-develop-github/feature-issue.md) with the *Develop* form, and assign it to Copilot with `develop-github`.
 - **Test:** the lab patch, the scenarios, and the defect report are in the source's [`solutions/04-test-github/`](https://github.com/melabadi/adept-assessment-northstars/tree/main/solutions/04-test-github): apply the patch on a `lab/test-<run>` branch, file the defect, and assign it with `test-github` and that branch as the base.
 - **Secure:** the lab patch and the regression are in [`solutions/05-secure-github/`](solutions/05-secure-github/), where its README's *Try it first* expects them.
 - **Release:** `gh workflow run release-github-candidate.yml -f version=1.0.0`, then approve the draft as the environment's reviewer.
-- **Operate:** file [the sample incident](https://github.com/melabadi/adept-assessment-northstars/blob/main/solutions/07-operate-github/incidents/inc-2041-notification-backlog.md) with the *Operate* form once the token is set, or triage it with [the Copilot CLI runbook](docs/runbooks/incident-triage.md).
+- **Operate:** file [the sample incident](https://github.com/melabadi/adept-assessment-northstars/blob/main/solutions/07-operate-github/incidents/inc-2041-notification-backlog.md) with the *Operate* form, or triage it with [the Copilot CLI runbook](docs/runbooks/incident-triage.md).
 
 Each accelerator's README names the metric to track when you adopt it, from the lead time from a request to a published backlog (Plan) to the time from an incident to a proven regression test (Operate).
 
