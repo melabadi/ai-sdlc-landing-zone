@@ -128,6 +128,7 @@ export interface Recommendation {
   status: string;
   departmentAtRecommendation: string;
   createdBy: PersonRef;
+  confirmedBy: PersonRef | null;
   createdAt: string;
   providerTraceId: string | null;
 }
@@ -137,6 +138,7 @@ export interface Permissions {
   canUpload: boolean;
   canTriage: boolean;
   canRoute: boolean;
+  canConfirmRecommendation: boolean;
   canDecide: boolean;
   decideBlockedReason: DecideBlockedReason | null;
 }

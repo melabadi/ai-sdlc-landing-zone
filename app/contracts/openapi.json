@@ -963,6 +963,75 @@
         }
       }
     },
+    "/api/requests/{id}/triage-recommendations/{recommendationId}/confirm": {
+      "post": {
+        "tags": [
+          "RequestHub"
+        ],
+        "summary": "Reviewer confirms a routing recommendation without changing approval authority.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recommendationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDetailDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/load-test/cleanup": {
       "post": {
         "tags": [
@@ -1515,6 +1584,7 @@
           "canUpload",
           "canTriage",
           "canRoute",
+          "canConfirmRecommendation",
           "canDecide",
           "decideBlockedReason"
         ],
@@ -1530,6 +1600,9 @@
             "type": "boolean"
           },
           "canRoute": {
+            "type": "boolean"
+          },
+          "canConfirmRecommendation": {
             "type": "boolean"
           },
           "canDecide": {
@@ -1706,6 +1779,7 @@
           "status",
           "departmentAtRecommendation",
           "createdBy",
+          "confirmedBy",
           "createdAt",
           "providerTraceId"
         ],
@@ -1755,6 +1829,16 @@
           },
           "createdBy": {
             "$ref": "#/components/schemas/PersonRef"
+          },
+          "confirmedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PersonRef"
+              }
+            ]
           },
           "createdAt": {
             "type": "string",

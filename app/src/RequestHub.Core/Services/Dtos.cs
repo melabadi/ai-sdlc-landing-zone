@@ -47,6 +47,7 @@ public sealed record RecommendationDto(
     string Status,
     string DepartmentAtRecommendation,
     PersonRef CreatedBy,
+    PersonRef? ConfirmedBy,
     DateTimeOffset CreatedAt,
     string? ProviderTraceId);
 
@@ -55,6 +56,7 @@ public sealed record PermissionsDto(
     bool CanUpload,
     bool CanTriage,
     bool CanRoute,
+    bool CanConfirmRecommendation,
     bool CanDecide,
     string? DecideBlockedReason);
 

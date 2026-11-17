@@ -106,6 +106,7 @@ export const noPermissions: Permissions = {
   canUpload: true,
   canTriage: false,
   canRoute: false,
+  canConfirmRecommendation: false,
   canDecide: false,
   decideBlockedReason: 'not_approver',
 };
@@ -146,6 +147,7 @@ export function recommendation(overrides: Partial<Recommendation> = {}): Recomme
     status: 'Proposed',
     departmentAtRecommendation: 'FAC',
     createdBy: person('u-ben'),
+    confirmedBy: null,
     createdAt: '2026-10-26T06:20:00Z',
     providerTraceId: null,
     ...overrides,
