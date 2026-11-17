@@ -106,7 +106,7 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         await using var scope = api.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
         var id = await PendingNotificationAsync(db);
-        var processor = Processor(db, new TimeoutSender(id), maxAttempts: 5, baseBackoffSeconds: 1);
+        var processor = Processor(db, new TimeoutSender(id), maxAttempts: 5, baseBackoffSeconds: 60);
 
         await processor.ProcessBatchAsync(CancellationToken.None);
 
@@ -152,6 +152,8 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         var n = await db.Notifications.SingleAsync(x => x.Id == id);
         Assert.Equal(NotificationStatus.Pending, n.Status);
         Assert.Equal(0, n.Attempts);
+        db.Notifications.Remove(n);
+        await db.SaveChangesAsync();
     }
 
     [Fact]
@@ -162,7 +164,7 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         var timedOutId = await PendingNotificationAsync(db);
         var sentId = await PendingNotificationAsync(db);
         var sender = new TimeoutSender(timedOutId);
-        var processor = Processor(db, sender, maxAttempts: 5, batchSize: 2, baseBackoffSeconds: 1);
+        var processor = Processor(db, sender, maxAttempts: 5, batchSize: 2, baseBackoffSeconds: 60);
 
         Assert.Equal(2, await processor.ProcessBatchAsync(CancellationToken.None));
 
