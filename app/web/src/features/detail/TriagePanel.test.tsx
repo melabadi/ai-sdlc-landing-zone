@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { detail, mockApi, noPermissions, problem, recommendation, renderApp } from '../../test/utils';
+import { callsTo, detail, mockApi, noPermissions, problem, recommendation, renderApp } from '../../test/utils';
 
 describe('TriagePanel', () => {
   it('labels sample-rule recommendations as not AI and shows policy citations with their text', async () => {
@@ -89,5 +89,131 @@ describe('TriagePanel', () => {
     expect(alert).toHaveTextContent('The triage assistant is unavailable right now. Route the request manually.');
     expect(alert).toHaveTextContent('Details: The triage assistant is unavailable. Route the request manually.');
     expect(within(panel).getByRole('button', { name: 'Get recommendation' })).toBeEnabled();
+  });
+
+  it('lets a permitted reviewer confirm only a fresh proposed recommendation', async () => {
+    mockApi({
+      'GET /api/requests/REQ-1001': () =>
+        detail({
+          latestRecommendation: recommendation({ departmentAtRecommendation: 'IT' }),
+          permissions: { ...noPermissions, canConfirmRecommendation: true },
+        }),
+      'GET /api/requests/REQ-1001/history': () => [],
+    });
+
+    renderApp('/requests/REQ-1001', { persona: 'u-ben' });
+
+    const panel = await screen.findByRole('region', { name: 'Triage assistant' });
+    expect(await within(panel).findByRole('button', { name: 'Confirm routing' })).toBeInTheDocument();
+  });
+
+  it('hides confirmation for requesters, stale recommendations, and already confirmed recommendations', async () => {
+    mockApi({
+      'GET /api/requests/REQ-1001': () =>
+        detail({
+          latestRecommendation: recommendation({
+            status: 'Proposed',
+            departmentAtRecommendation: 'FAC',
+          }),
+          departmentId: 'IT',
+          permissions: { ...noPermissions, canConfirmRecommendation: true },
+        }),
+      'GET /api/requests/REQ-1001/history': () => [],
+    });
+    const { unmount } = renderApp('/requests/REQ-1001', { persona: 'u-ben' });
+    let panel = await screen.findByRole('region', { name: 'Triage assistant' });
+    expect(within(panel).queryByRole('button', { name: 'Confirm routing' })).not.toBeInTheDocument();
+    unmount();
+
+    mockApi({
+      'GET /api/requests/REQ-1001': () =>
+        detail({
+          latestRecommendation: recommendation({ departmentAtRecommendation: 'IT' }),
+          permissions: { ...noPermissions, canConfirmRecommendation: true },
+        }),
+      'GET /api/requests/REQ-1001/history': () => [],
+    });
+    const requesterView = renderApp('/requests/REQ-1001', { persona: 'u-ava' });
+    panel = await screen.findByRole('region', { name: 'Triage assistant' });
+    expect(within(panel).queryByRole('button', { name: 'Confirm routing' })).not.toBeInTheDocument();
+    requesterView.unmount();
+
+    mockApi({
+      'GET /api/requests/REQ-1001': () =>
+        detail({
+          latestRecommendation: recommendation({
+            status: 'Confirmed',
+            departmentAtRecommendation: 'IT',
+            confirmedBy: { id: 'u-ben', displayName: 'Ben Okafor' },
+          }),
+          permissions: { ...noPermissions, canConfirmRecommendation: false },
+        }),
+      'GET /api/requests/REQ-1001/history': () => [],
+    });
+
+    renderApp('/requests/REQ-1001', { persona: 'u-ava' });
+    panel = await screen.findByRole('region', { name: 'Triage assistant' });
+    expect(within(panel).queryByRole('button', { name: 'Confirm routing' })).not.toBeInTheDocument();
+    expect(within(panel).getByText('Confirmed by Ben Okafor')).toBeInTheDocument();
+  });
+
+  it('confirms through the additive endpoint, refreshes detail and history, and localizes the confirmation', async () => {
+    let confirmed = false;
+    const fetchMock = mockApi({
+      'GET /api/requests/REQ-1001': () =>
+        detail({
+          departmentId: confirmed ? 'FAC' : 'IT',
+          status: confirmed ? 'InReview' : 'Submitted',
+          latestRecommendation: recommendation({
+            status: confirmed ? 'Confirmed' : 'Proposed',
+            departmentAtRecommendation: 'IT',
+            confirmedBy: confirmed ? { id: 'u-ben', displayName: 'Ben Okafor' } : null,
+          }),
+          permissions: { ...noPermissions, canConfirmRecommendation: !confirmed },
+        }),
+      'GET /api/requests/REQ-1001/history': () =>
+        confirmed
+          ? [
+              {
+                id: 501,
+                action: 'triage.confirmed',
+                actor: { id: 'u-ben', displayName: 'Ben Okafor' },
+                occurredAt: '2026-10-26T06:25:00Z',
+                details: { recommendationId: '7d2c1f00-0000-4000-8000-000000000001', from: 'IT', to: 'FAC' },
+                correlationId: null,
+              },
+            ]
+          : [],
+      'POST /api/requests/REQ-1001/triage-recommendations/7d2c1f00-0000-4000-8000-000000000001/confirm': () => {
+        confirmed = true;
+        return detail({
+          departmentId: 'FAC',
+          status: 'InReview',
+          latestRecommendation: recommendation({
+            status: 'Confirmed',
+            departmentAtRecommendation: 'IT',
+            confirmedBy: { id: 'u-ben', displayName: 'Ben Okafor' },
+          }),
+        });
+      },
+    });
+    const user = userEvent.setup();
+
+    const frenchView = renderApp('/requests/REQ-1001', { persona: 'u-ben', locale: 'fr' });
+
+    const panel = await screen.findByRole('region', { name: 'Assistant de triage' });
+    await user.click(await within(panel).findByRole('button', { name: "Confirmer l'acheminement" }));
+
+    expect(await within(panel).findByText('Confirmée par Ben Okafor')).toBeInTheDocument();
+    expect(await screen.findByText('Acheminement confirmé : Installations')).toBeInTheDocument();
+    expect(callsTo(fetchMock, 'POST', '/api/requests/REQ-1001/triage-recommendations/7d2c1f00-0000-4000-8000-000000000001/confirm')).toHaveLength(1);
+    expect(callsTo(fetchMock, 'GET', '/api/requests/REQ-1001')).toHaveLength(2);
+    expect(callsTo(fetchMock, 'GET', '/api/requests/REQ-1001/history')).toHaveLength(2);
+    expect(within(panel).queryByRole('button', { name: "Confirmer l'acheminement" })).not.toBeInTheDocument();
+    frenchView.unmount();
+
+    renderApp('/requests/REQ-1001', { persona: 'u-ben', locale: 'en' });
+    expect(await screen.findByText('Routing confirmed: Facilities')).toBeInTheDocument();
+    expect(await screen.findByText('Confirmed by Ben Okafor')).toBeInTheDocument();
   });
 });

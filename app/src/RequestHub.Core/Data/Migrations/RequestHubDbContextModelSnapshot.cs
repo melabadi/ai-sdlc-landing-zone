@@ -338,6 +338,10 @@ namespace RequestHub.Core.Data.Migrations
                     b.Property<double>("Confidence")
                         .HasColumnType("double precision");
 
+                    b.Property<string>("ConfirmedById")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
