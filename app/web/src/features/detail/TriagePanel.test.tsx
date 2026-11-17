@@ -141,6 +141,7 @@ describe('TriagePanel', () => {
     mockApi({
       'GET /api/requests/REQ-1001': () =>
         detail({
+          departmentId: 'FAC',
           latestRecommendation: recommendation({
             status: 'Confirmed',
             departmentAtRecommendation: 'IT',
@@ -155,6 +156,7 @@ describe('TriagePanel', () => {
     panel = await screen.findByRole('region', { name: 'Triage assistant' });
     expect(within(panel).queryByRole('button', { name: 'Confirm routing' })).not.toBeInTheDocument();
     expect(within(panel).getByText('Confirmed by Ben Okafor')).toBeInTheDocument();
+    expect(within(panel).queryByText('Stale: request was rerouted since this suggestion')).not.toBeInTheDocument();
   });
 
   it('confirms through the additive endpoint, refreshes detail and history, and localizes the confirmation', async () => {
