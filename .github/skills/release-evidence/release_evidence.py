@@ -370,9 +370,10 @@ def cmd_preflight(args: argparse.Namespace) -> int:
                                 f"approval comes from {mode}. Required reviewers on environments need a public "
                                 "repository on GitHub Free, Pro, and Team, or GitHub Enterprise for private ones"))
 
-    owner = repo.split("/")[0].lower()
+    # Images live under the repository's own path, ghcr.io/<owner>/<repository>/requesthub-<service>: another
+    # repository of the same owner that publishes requesthub images can't then move this one's tags, or block its pushes.
     outputs = {"tag": tag, "version": version, "previous_tag": previous_tag,
-               "image_prefix": f"ghcr.io/{owner}", "approval_mode": mode}
+               "image_prefix": f"ghcr.io/{repo.lower()}", "approval_mode": mode}
     write_outputs(outputs)
     write_summary(f"### Preflight for `{tag}`\n\n{checks_table(checks)}\n")
     print_checks(f"Preflight for {tag} in {repo}", checks)
