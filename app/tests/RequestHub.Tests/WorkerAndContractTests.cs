@@ -27,9 +27,27 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         }
     }
 
-    private NotificationProcessor Processor(RequestHubDbContext db, INotificationSender sender, int maxAttempts) => new(
+    private sealed class TimeoutSender(Guid target, CancellationTokenSource? cancelOnSend = null) : INotificationSender
+    {
+        public List<Guid> Calls { get; } = [];
+
+        public Task SendAsync(Notification notification, CancellationToken cancellationToken)
+        {
+            Calls.Add(notification.Id);
+            if (notification.Id != target) return Task.CompletedTask;
+            cancelOnSend?.Cancel();
+            throw new TaskCanceledException("SMTP relay timed out");
+        }
+    }
+
+    private NotificationProcessor Processor(
+        RequestHubDbContext db,
+        INotificationSender sender,
+        int maxAttempts,
+        int batchSize = 1,
+        int baseBackoffSeconds = 0) => new(
         db, sender, TimeProvider.System,
-        Options.Create(new WorkerOptions { BatchSize = 1, MaxAttempts = maxAttempts, BaseBackoffSeconds = 0 }),
+        Options.Create(new WorkerOptions { BatchSize = batchSize, MaxAttempts = maxAttempts, BaseBackoffSeconds = baseBackoffSeconds }),
         new StaticOptionsMonitor<FaultOptions>(new FaultOptions()),
         NullLogger<NotificationProcessor>.Instance);
 
@@ -43,6 +61,14 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         db.Notifications.Add(n);
         await db.SaveChangesAsync();
         return n.Id;
+    }
+
+    private static async Task DeleteNotificationsAsync(RequestHubDbContext db, params Guid[] ids)
+    {
+        db.ChangeTracker.Clear();
+        var notifications = await db.Notifications.Where(n => ids.Contains(n.Id)).ToListAsync();
+        db.Notifications.RemoveRange(notifications);
+        await db.SaveChangesAsync();
     }
 
     [Fact]
@@ -80,6 +106,108 @@ public sealed class WorkerTests(ApiFixture api) : IClassFixture<ApiFixture>
         Assert.Equal(NotificationStatus.Failed, n.Status);
         Assert.Equal(3, n.Attempts);
         Assert.Contains("SMTP", n.LastError);
+    }
+
+    [Fact]
+    public async Task Timed_out_delivery_is_retried_with_backoff()
+    {
+        await using var scope = api.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
+        var id = await PendingNotificationAsync(db);
+        try
+        {
+            var processor = Processor(db, new TimeoutSender(id), maxAttempts: 5, baseBackoffSeconds: 60);
+            await processor.ProcessBatchAsync(CancellationToken.None);
+
+            db.ChangeTracker.Clear();
+            var n = await db.Notifications.SingleAsync(x => x.Id == id);
+            Assert.Equal(NotificationStatus.Pending, n.Status);
+            Assert.Equal(1, n.Attempts);
+            Assert.Contains("timed out", n.LastError);
+            Assert.True(n.NextAttemptAt > DateTimeOffset.UtcNow);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, id);
+        }
+    }
+
+    [Fact]
+    public async Task Timed_out_delivery_is_failed_after_max_attempts_and_counted_in_backlog()
+    {
+        await using var scope = api.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
+        var failedBefore = await db.Notifications.CountAsync(n => n.Status == NotificationStatus.Failed);
+        var id = await PendingNotificationAsync(db);
+        try
+        {
+            var processor = Processor(db, new TimeoutSender(id), maxAttempts: 1);
+            await processor.ProcessBatchAsync(CancellationToken.None);
+
+            db.ChangeTracker.Clear();
+            var n = await db.Notifications.SingleAsync(x => x.Id == id);
+            Assert.Equal(NotificationStatus.Failed, n.Status);
+            Assert.Equal(1, n.Attempts);
+            Assert.Contains("timed out", n.LastError);
+            Assert.Equal(failedBefore + 1, (await processor.GetBacklogAsync(CancellationToken.None)).Failed);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, id);
+        }
+    }
+
+    [Fact]
+    public async Task Cancellation_during_delivery_still_propagates()
+    {
+        await using var scope = api.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
+        var id = await PendingNotificationAsync(db);
+        try
+        {
+            using var cts = new CancellationTokenSource();
+            var processor = Processor(db, new TimeoutSender(id, cts), maxAttempts: 5);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processor.ProcessBatchAsync(cts.Token));
+
+            db.ChangeTracker.Clear();
+            var n = await db.Notifications.SingleAsync(x => x.Id == id);
+            Assert.Equal(NotificationStatus.Pending, n.Status);
+            Assert.Equal(0, n.Attempts);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, id);
+        }
+    }
+
+    [Fact]
+    public async Task Timed_out_delivery_does_not_prevent_other_batch_deliveries()
+    {
+        await using var scope = api.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
+        var timedOutId = await PendingNotificationAsync(db);
+        var sentId = await PendingNotificationAsync(db);
+        try
+        {
+            var sender = new TimeoutSender(timedOutId);
+            var processor = Processor(db, sender, maxAttempts: 5, batchSize: 2, baseBackoffSeconds: 60);
+
+            Assert.Equal(2, await processor.ProcessBatchAsync(CancellationToken.None));
+
+            db.ChangeTracker.Clear();
+            var timedOut = await db.Notifications.SingleAsync(x => x.Id == timedOutId);
+            var sent = await db.Notifications.SingleAsync(x => x.Id == sentId);
+            Assert.Equal(NotificationStatus.Pending, timedOut.Status);
+            Assert.Equal(1, timedOut.Attempts);
+            Assert.Equal(NotificationStatus.Sent, sent.Status);
+            Assert.Equal(1, sent.Attempts);
+            Assert.Equal(0, await processor.ProcessBatchAsync(CancellationToken.None));
+            Assert.Equal(2, sender.Calls.Count);
+        }
+        finally
+        {
+            await DeleteNotificationsAsync(db, timedOutId, sentId);
+        }
     }
 
     [Fact]
