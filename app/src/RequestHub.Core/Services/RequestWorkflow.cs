@@ -258,7 +258,13 @@ public sealed partial class RequestWorkflow(
             return new WorkflowError("decision.self_approval", "You cannot decide on your own request.", 403);
         }
 
-        var now = clock.GetUtcNow();
+        if (request.Decision is { } priorDecision)
+        {
+            return ExistingDecisionOutcome(priorDecision, user, key);
+        }
+
+        var current = clock.GetUtcNow();
+        var now = new DateTimeOffset(current.UtcDateTime.Ticks - current.UtcDateTime.Ticks % 10, TimeSpan.Zero);
         var decision = new ApprovalDecision
         {
             Id = Guid.NewGuid(),
@@ -275,7 +281,26 @@ public sealed partial class RequestWorkflow(
         AddAudit(request.Id, user.Id, "decision.recorded", now, new { request = request.PublicId, outcome = outcome.ToString() });
         AddNotification(request, request.RequesterId, "request.decided", now, new { outcome = outcome.ToString() });
 
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            var concurrentDecision = await LoadExistingDecisionAsync(request.Id, ct);
+            if (concurrentDecision is null) throw;
+            return ExistingDecisionOutcome(concurrentDecision, user, key);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "IX_Decisions_RequestId",
+        })
+        {
+            var concurrentDecision = await LoadExistingDecisionAsync(request.Id, ct);
+            if (concurrentDecision is null) throw;
+            return ExistingDecisionOutcome(concurrentDecision, user, key);
+        }
 
         RequestHubTelemetry.DecisionsRecorded.Add(1, new KeyValuePair<string, object?>("outcome", outcome.ToString()));
         logger.LogInformation("Decision {Outcome} recorded on {RequestId} by {UserId}", outcome, request.PublicId, user.Id);
@@ -654,6 +679,14 @@ public sealed partial class RequestWorkflow(
         }
 
         return new WorkflowError("decision.already_decided", $"This request was already {existing.Outcome.ToString().ToLowerInvariant()}.", 409, new { decision = dto });
+    }
+
+    private async Task<ApprovalDecision?> LoadExistingDecisionAsync(Guid requestId, CancellationToken ct)
+    {
+        db.ChangeTracker.Clear();
+        return await db.Decisions.AsNoTracking()
+            .Include(decision => decision.DecidedBy)
+            .SingleOrDefaultAsync(decision => decision.RequestId == requestId, ct);
     }
 
     private async Task<Result<RequestDetailDto>> ReplayCreateAsync(AppUser user, int number, CancellationToken ct)
