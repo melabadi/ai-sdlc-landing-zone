@@ -345,6 +345,8 @@ public sealed class TriageRecommendationConcurrencyTests(BlockingTriageFixture a
             var verifyDb = verifyScope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
             var requestId = await verifyDb.Requests.Where(r => r.Number == 1001).Select(r => r.Id).SingleAsync();
             var recommendationCount = await verifyDb.Recommendations.CountAsync(r => r.RequestId == requestId);
+            var toolCallCount = await verifyDb.AuditEvents.CountAsync(a =>
+                a.RequestId == requestId && a.Action == "triage.tool_call");
             Assert.True(
                 recommendationResponse.StatusCode == HttpStatusCode.Conflict
                 && responseCode == "recommendation.stale"
@@ -352,8 +354,9 @@ public sealed class TriageRecommendationConcurrencyTests(BlockingTriageFixture a
                 && current.LatestRecommendation?.Id == recommendationId
                 && current.LatestRecommendation.Status == "Confirmed"
                 && current.LatestRecommendation.ConfirmedBy?.Id == "u-ben"
-                && recommendationCount == 1,
-                $"Expected the blocked recommendation to be refused without overwriting confirmation. Got HTTP {(int)recommendationResponse.StatusCode} ({responseCode}), department {current.DepartmentId}, latest recommendation {current.LatestRecommendation?.Id} ({current.LatestRecommendation?.Status}), count {recommendationCount}.");
+                && recommendationCount == 1
+                && toolCallCount == 1,
+                $"Expected the blocked recommendation to be refused without overwriting confirmation and with its tool audit preserved. Got HTTP {(int)recommendationResponse.StatusCode} ({responseCode}), department {current.DepartmentId}, latest recommendation {current.LatestRecommendation?.Id} ({current.LatestRecommendation?.Status}), recommendation count {recommendationCount}, tool-call audit count {toolCallCount}.");
         }
         finally
         {
@@ -420,10 +423,11 @@ public sealed class BlockingTriageProvider : ITriageProvider
 
     public static void Release(TriageResult result) => resultGate.TrySetResult(result);
 
-    public Task<TriageResult> RecommendAsync(TriageContext context, CancellationToken cancellationToken)
+    public async Task<TriageResult> RecommendAsync(TriageContext context, CancellationToken cancellationToken)
     {
+        await context.Tools.GetRequestAsync(context.RequestId, cancellationToken);
         started.TrySetResult(true);
-        return resultGate.Task.WaitAsync(cancellationToken);
+        return await resultGate.Task.WaitAsync(cancellationToken);
     }
 
     private static TaskCompletionSource<bool> NewSignal() =>
