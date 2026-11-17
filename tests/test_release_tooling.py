@@ -362,6 +362,15 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("must be higher", out)
 
+    def test_preflight_puts_the_images_under_the_repository(self):
+        # Another repository of the same owner may already publish ghcr.io/<owner>/requesthub-*.
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = Path(tmp) / "outputs"
+            with unittest.mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(outputs)}):
+                code, out = self.run_preflight([])
+            self.assertEqual(code, 0, out)
+            self.assertIn(f"image_prefix=ghcr.io/{REPO.lower()}\n", outputs.read_text(encoding="utf-8"))
+
 
 class AiSummaryTriggerTests(unittest.TestCase):
     """The agentic release summary runs with COPILOT_GITHUB_TOKEN and can append to a release. Its workflow_run trigger
