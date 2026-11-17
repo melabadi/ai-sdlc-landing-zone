@@ -25,6 +25,7 @@ flowchart TB
   GOV --- ACC --- FND --- APP
 ```
 
+- **See it work:** [one release cycle through all seven phases](docs/see-it-work/README.md), run live on 17 November 2026: from stakeholder notes to a published release and a proven incident fix, with nine decisions made by a person, and every step's screenshots, links, timings, and AI credits.
 - **Build your own:** [install the seven in your repository](#build-your-own-landing-zone), each with its README's commands, then the [one-time setup](#3-set-up-what-they-share-once) they share. Here the seven installs took 20 minutes 33 seconds, and the one-time setup about 5 more, apart from the token you create yourself.
 - **Files to edit to tweak it:** [the landing zone's own files](#files-to-edit-to-tweak-it), and each accelerator's list.
 - **Check it:** [`tools/check_landing_zone.py`](tools/check_landing_zone.py) reads the repository and reports, for every accelerator, whether it is installed, set up, and green: [48 passed, 0 failed](#the-wiring-check).
@@ -102,7 +103,8 @@ app/                                RequestHub: the API, the worker, the web UI,
 planning/                           1 Plan: workshop notes and policies (inputs/), Copilot's task, the publisher's tests
 docs/
 ├── architecture/                   2 Design: the approved standards, the reviewed brief, Copilot CLI's task; ADRs go in adr/
-└── runbooks/incident-triage.md     7 Operate: the triage with Copilot CLI, without the token
+├── runbooks/incident-triage.md     7 Operate: the triage with Copilot CLI, without the token
+└── see-it-work/                    the recorded end-to-end run: one release cycle through the seven phases, with screenshots
 tests/                              unit tests of the Test, Release, and Operate scripts, with JUnit fixtures
 solutions/05-secure-github/         5 Secure: the lab patch, the regression reference, the replay setup, their tests
 tools/check_landing_zone.py         the wiring check
@@ -309,11 +311,11 @@ On 16 November 2026, a GitHub Copilot agent session working for the repository o
 
 On 17 November, the same session finished the one-time setup in the owner's browser. It created `COPILOT_GITHUB_TOKEN_LANDING_ZONE`, a fine-grained token with Copilot Requests: Read only, which expires on 15 February 2027, stored it as `COPILOT_GITHUB_TOKEN`, and turned on *Block reviews requested with an external Copilot license*. When the token expires, the four agentic workflows fail until you store a new one; everything else keeps working.
 
-Nothing in this repository has run Copilot yet: the landing zone is ready for each accelerator's first use.
+The same day, the owner ran one release cycle through all seven phases, live, with this landing zone: [See it work](docs/see-it-work/README.md) records every step, from Issue [#13](https://github.com/melabadi/ai-sdlc-landing-zone/issues/13) to pull request [#34](https://github.com/melabadi/ai-sdlc-landing-zone/pull/34).
 
 ## Try an accelerator here
 
-Each README's *Use it the first time* applies here, with the paths above. The feature, the defect lab, and the sample incident of the recorded runs stayed in the source repository, as the copy steps leave them: use them for a first run.
+Each README's *Use it the first time* applies here, with the paths above. The feature, the defect lab, and the sample incident of the recorded runs stayed in the source repository, as the copy steps leave them: use them for a first run. The [end-to-end run](docs/see-it-work/README.md) used them once, so `main` now has their results: the brief, ADR 0001, the routing confirmation, and the timeout fix. Its [Run it again](docs/see-it-work/README.md#run-it-again) says which base branch to give Copilot to repeat a phase.
 
 - **Plan:** the notes are in [`planning/inputs/`](planning/inputs/). On a new branch, run `copilot --agent plan-github --allow-all-tools -p (Get-Content planning/refine-task.md -Raw)`, open the pull request, then apply `brief-approved`.
 - **Design:** on a new branch, run `copilot --agent design-github --allow-all-tools -p (Get-Content docs/architecture/adr-task.md -Raw)`, or comment `/design-review` on an Issue.
