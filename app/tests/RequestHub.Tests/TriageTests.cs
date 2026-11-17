@@ -292,6 +292,77 @@ public sealed class TriageTests(ApiFixture api) : IClassFixture<ApiFixture>
     }
 }
 
+public sealed class TriageRecommendationConcurrencyTests(BlockingTriageFixture api) : IClassFixture<BlockingTriageFixture>
+{
+    [Fact]
+    public async Task In_flight_recommendation_cannot_supersede_a_confirmation_that_rerouted_the_request()
+    {
+        var reset = await api.As("u-dan").PostAsync("/api/admin/reset", null);
+        Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+
+        var recommendationId = Guid.NewGuid();
+        await using (var scope = api.Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
+            var request = await db.Requests.SingleAsync(r => r.Number == 1001);
+            db.Recommendations.Add(new TriageRecommendation
+            {
+                Id = recommendationId,
+                RequestId = request.Id,
+                Provider = "sample-rules",
+                IsSample = true,
+                SuggestedDepartmentId = "FAC",
+                SuggestedPriority = RequestPriority.Normal,
+                Rationale = "Facilities policy applies.",
+                PolicyRefs = ["POL-ROUTE-003@2.1"],
+                Confidence = 0.9,
+                DepartmentAtRecommendation = "IT",
+                CreatedById = "u-ben",
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        BlockingTriageProvider.Reset();
+        var recommendationRequest = api.As("u-ben").PostAsync("/api/requests/REQ-1001/triage-recommendations", null);
+
+        try
+        {
+            await BlockingTriageProvider.WaitUntilStartedAsync(TimeSpan.FromSeconds(10));
+            var confirmation = await api.As("u-ben").PostAsync(
+                $"/api/requests/REQ-1001/triage-recommendations/{recommendationId}/confirm", null);
+            Assert.Equal(HttpStatusCode.OK, confirmation.StatusCode);
+            var confirmedDetail = await confirmation.Read<RequestDetailDto>();
+            Assert.Equal("FAC", confirmedDetail.DepartmentId);
+            Assert.Equal("Confirmed", confirmedDetail.LatestRecommendation!.Status);
+
+            BlockingTriageProvider.Release(new TriageResult(
+                "IT", "Normal", "The original request context suggested IT.", ["POL-ROUTE-001"], 0.8, false));
+            var recommendationResponse = await recommendationRequest;
+            var responseCode = await recommendationResponse.Code();
+            var current = await (await api.As("u-ben").GetAsync("/api/requests/REQ-1001")).Read<RequestDetailDto>();
+            await using var verifyScope = api.Factory.Services.CreateAsyncScope();
+            var verifyDb = verifyScope.ServiceProvider.GetRequiredService<RequestHubDbContext>();
+            var requestId = await verifyDb.Requests.Where(r => r.Number == 1001).Select(r => r.Id).SingleAsync();
+            var recommendationCount = await verifyDb.Recommendations.CountAsync(r => r.RequestId == requestId);
+            Assert.True(
+                recommendationResponse.StatusCode == HttpStatusCode.Conflict
+                && responseCode == "recommendation.stale"
+                && current.DepartmentId == "FAC"
+                && current.LatestRecommendation?.Id == recommendationId
+                && current.LatestRecommendation.Status == "Confirmed"
+                && current.LatestRecommendation.ConfirmedBy?.Id == "u-ben"
+                && recommendationCount == 1,
+                $"Expected the blocked recommendation to be refused without overwriting confirmation. Got HTTP {(int)recommendationResponse.StatusCode} ({responseCode}), department {current.DepartmentId}, latest recommendation {current.LatestRecommendation?.Id} ({current.LatestRecommendation?.Status}), count {recommendationCount}.");
+        }
+        finally
+        {
+            BlockingTriageProvider.Release(new TriageResult(
+                "IT", "Normal", "The original request context suggested IT.", ["POL-ROUTE-001"], 0.8, false));
+        }
+    }
+}
+
 /// <summary>A provider that misbehaves on purpose, to prove the app's guards (not the model) decide what is accepted.</summary>
 public sealed class MisbehavingTriageProvider : ITriageProvider
 {
@@ -328,6 +399,46 @@ public sealed class MisbehavingTriageProvider : ITriageProvider
             default:
                 throw new TriageUnavailableException("Provider offline.");
         }
+    }
+}
+
+public sealed class BlockingTriageProvider : ITriageProvider
+{
+    private static TaskCompletionSource<bool> started = NewSignal();
+    private static TaskCompletionSource<TriageResult> resultGate = NewResultGate();
+
+    public string Id => "blocking-test";
+    public bool IsSample => false;
+
+    public static void Reset()
+    {
+        started = NewSignal();
+        resultGate = NewResultGate();
+    }
+
+    public static Task WaitUntilStartedAsync(TimeSpan timeout) => started.Task.WaitAsync(timeout);
+
+    public static void Release(TriageResult result) => resultGate.TrySetResult(result);
+
+    public Task<TriageResult> RecommendAsync(TriageContext context, CancellationToken cancellationToken)
+    {
+        started.TrySetResult(true);
+        return resultGate.Task.WaitAsync(cancellationToken);
+    }
+
+    private static TaskCompletionSource<bool> NewSignal() =>
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private static TaskCompletionSource<TriageResult> NewResultGate() =>
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
+
+public sealed class BlockingTriageFixture : ApiFixture
+{
+    protected override void ConfigureTestServices(IServiceCollection services)
+    {
+        services.RemoveAll<ITriageProvider>();
+        services.AddSingleton<ITriageProvider, BlockingTriageProvider>();
     }
 }
 
