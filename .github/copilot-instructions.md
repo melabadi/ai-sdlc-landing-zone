@@ -13,6 +13,7 @@ This repository holds **RequestHub**, a small request-and-approval portal with s
 | `planning/` | Plan: the workshop notes and policies a brief cites, Copilot's task, and the publisher's unit tests. |
 | `docs/architecture/` | Design: the approved standards, the reviewed brief, Copilot CLI's task, and the ADRs in `adr/`. |
 | `docs/runbooks/` | Runbooks, such as the incident triage with Copilot CLI. |
+| `docs/see-it-work/` | The recorded end-to-end run: one release cycle through the seven phases, with its screenshots. |
 | `tests/` | Unit tests of the accelerators' scripts (Test, Release, Operate): `python -m unittest discover -s tests`. |
 | `solutions/05-secure-github/` | Secure: the lab patch, the regression reference, the replay setup, and their unit tests. Never apply the lab patch to `main`. |
 | `tools/check_landing_zone.py` | Checks that every accelerator is installed, set up, and green. |
