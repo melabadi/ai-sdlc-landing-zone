@@ -1,8 +1,8 @@
 # ADR 0001: Live AI triage provider
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-17
-- **Deciders:** to be named in the design review (people, never an agent)
+- **Deciders:** melabadi (repository owner)
 - **Related:** `docs/architecture/inputs/reviewed-brief.md`
 
 ## Context
@@ -194,3 +194,4 @@ No API change is required. If a later decision requires a locale or gateway-cont
 7. **Rationale handling:** What validation or redaction is required if a structured rationale echoes free text from the request? The recommendation needs a rationale, while STD-SEC-002 v1.1 forbids persisting raw completions containing user free text.
 8. **Personal data before egress:** Title and description can contain personal data, and STD-SEC-002 v1.1 prohibits sending it but does not define detection or handling. Which pre-egress rejection or redaction policy and acceptance cases will the designated privacy/security policy owner approve? Neither profile may be enabled until this is decided and tested.
 9. **Small-team audit retention:** STD-DATA-002 v1.0 sets 90 days for recommendations only, not audit entries. What retention rule should a person approve for small-team AI audit evidence required by BR-4? Until then, retain the evidence and do not delete it under the recommendation rule.
+10. **Per-call correlation:** Copilot code review raised this on the accepted revision. For enterprise, STD-AI-002 v1.0 requires a provider response or trace identifier correlated with the business record for every AI call. Recording only the final recommendation's identifier leaves earlier tool-calling responses untracked, including when a continuation fails. The implementation must keep per-call correlation that survives later call or validation failures, with an acceptance test for a multi-round exchange that fails after its first response. Who owns it, and in which task?
