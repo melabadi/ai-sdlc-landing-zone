@@ -25,6 +25,7 @@ flowchart TB
   GOV --- ACC --- FND --- APP
 ```
 
+- **The guide:** [melabadi.github.io/ai-sdlc-landing-zone](https://melabadi.github.io/ai-sdlc-landing-zone/), a website that walks through one live run of the seven, phase by phase, with a link to every artifact. Its source is [`site/`](site/).
 - **See it work:** [one release cycle through all seven phases](docs/see-it-work/README.md), run live on 17 November 2026: from stakeholder notes to a published release and a proven incident fix, with nine decisions made by a person. For each phase: its steps with screenshots, its artifacts, its acceptance criteria and how each was checked, and its next step.
 - **Build your own:** [install the seven in your repository](#build-your-own-landing-zone), each with its README's commands, then the [one-time setup](#3-set-up-what-they-share-once) they share. Here the seven installs took 20 minutes 33 seconds, and the one-time setup about 5 more, apart from the token you create yourself.
 - **Files to edit to tweak it:** [the landing zone's own files](#files-to-edit-to-tweak-it), and each accelerator's list.
@@ -40,7 +41,8 @@ flowchart TB
 | [GitHub Copilot CLI](https://docs.github.com/en/copilot/concepts/copilot-surfaces/copilot-cli) | Runs the same agents from a terminal |
 | [Copilot code review](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-code-review) | Reviews an ADR, a fix, or a security repair |
 | [GitHub Agentic Workflows](https://github.com/github/gh-aw) | Four workflows that run Copilot on an event, with read-only access and only the writes they allow: the design review, the CI failure investigation, the release summary, and the incident triage |
-| [GitHub Actions](https://docs.github.com/en/actions) | 21 workflows: CI, Copilot's environment, and each accelerator's checks, proofs, and release steps |
+| [GitHub Actions](https://docs.github.com/en/actions) | 22 workflows: CI, Copilot's environment, each accelerator's checks, proofs, and release steps, and the guide's publishing |
+| [GitHub Pages](https://docs.github.com/en/pages) | Publishes [the guide](https://melabadi.github.io/ai-sdlc-landing-zone/) to the end-to-end run, built from `site/` |
 | Issues, with six [issue forms](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms) and 25 labels | Start the work: notes to refine, a design question, a feature, a defect, a remediation, an incident |
 | [Rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets) | Require a pull request and six deterministic checks on `main` |
 | [Environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments#deployment-protection-rules) and GitHub Container Registry | Gate the release approval on a person, and hold the release images |
@@ -107,6 +109,7 @@ docs/
 └── see-it-work/                    the recorded end-to-end run: one release cycle through the seven phases, with screenshots
 tests/                              unit tests of the Test, Release, and Operate scripts, with JUnit fixtures
 solutions/05-secure-github/         5 Secure: the lab patch, the regression reference, the replay setup, their tests
+site/                               the guide on GitHub Pages: its pages, build script, styles, fonts, and icons
 tools/check_landing_zone.py         the wiring check
 .github/
 ├── copilot-instructions.md         the repository's instructions for Copilot, with this map
@@ -211,6 +214,7 @@ Each accelerator's README lists its own files under *Files to edit to tweak it*.
 | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | The tests the ruleset requires on every pull request |
 | The ruleset *Protect main* (**Settings** → **Rules**) | Which checks block a merge |
 | [`tools/check_landing_zone.py`](tools/check_landing_zone.py) | `ACCELERATORS`, `REQUIRED_CHECKS`, and `FOUNDATION_FILES`: what the wiring check expects |
+| [`site/pages/`](site/pages/) | The guide's text: one file per page, with each phase's steps, artifacts, and acceptance criteria ([`site/README.md`](site/README.md)) |
 
 ## The wiring check
 
@@ -311,7 +315,7 @@ On 16 November 2026, a GitHub Copilot agent session working for the repository o
 
 On 17 November, the same session finished the one-time setup in the owner's browser. It created `COPILOT_GITHUB_TOKEN_LANDING_ZONE`, a fine-grained token with Copilot Requests: Read only, which expires on 15 February 2027, stored it as `COPILOT_GITHUB_TOKEN`, and turned on *Block reviews requested with an external Copilot license*. When the token expires, the four agentic workflows fail until you store a new one; everything else keeps working.
 
-The same day, the owner ran one release cycle through all seven phases, live, with this landing zone: [See it work](docs/see-it-work/README.md) records every step, from Issue [#13](https://github.com/melabadi/ai-sdlc-landing-zone/issues/13) to pull request [#34](https://github.com/melabadi/ai-sdlc-landing-zone/pull/34).
+The same day, the owner ran one release cycle through all seven phases, live, with this landing zone: [See it work](docs/see-it-work/README.md) records every step, from Issue [#13](https://github.com/melabadi/ai-sdlc-landing-zone/issues/13) to pull request [#34](https://github.com/melabadi/ai-sdlc-landing-zone/pull/34). On 18 November, [the guide](https://melabadi.github.io/ai-sdlc-landing-zone/) put that run on a GitHub Pages website, built from [`site/`](site/) by [`pages.yml`](.github/workflows/pages.yml).
 
 ## Try an accelerator here
 

@@ -1,0 +1,190 @@
+# Phase 05, Secure. Steps, artifacts, acceptance criteria, and next step of the recorded run.
+kind = "phase"
+slug = "secure"
+number = 5
+name = "Secure"
+title = "An injection found, and a repair proven"
+accelerator = "solutions/05-secure-github"
+lead = '''The Secure accelerator has Copilot code review and CodeQL find a vulnerability on a lab branch, and Copilot repair it test-first. A trusted replay then proves the repair with a regression that Copilot didn't write.'''
+criteria_source = "[#23]"
+next = '''Every night, `secure-github-verify.yml` replays #24 again from `main`, without Copilot: the regression must still fail before the repair and pass after it, with the full suite. On a real finding, the repair targets `main` and ships in the next release.'''
+
+[overview]
+output = ["finding", "proven repair"]
+starts = '''Copilot code review on a `lab/secure-*` pull request, then the *Secure: remediate* form, assigned with `secure-github`'''
+copilot = '''Finds the injection; commits the regression, then the repair'''
+gate = '''The trusted replay, `secure-github-verify.yml`, and the CodeQL scan'''
+person = '''Decides on the repair; the lab never merges'''
+
+[facts]
+starts = '''Lab pull request [#17], then Issue [#23]'''
+produces = '''The finding; the regression, then the repair, in [#24]'''
+complete = '''The trusted replay: 6 of 10 cases fail before the repair, 10 of 10 pass after; a clean CodeQL rescan'''
+decides = '''Approves the repair; the lab closes unmerged'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot code review"
+label = "Flags the injection"
+ref = "PR #17"
+title = "Copilot code review flags the injection."
+text = '''Lab pull request [#17] replaces RequestHub's safe search with SQL built by string concatenation, on a lab branch that is never deployed. Copilot code review flagged it, and commented on keeping the literal `LIKE` semantics.'''
+
+[[steps.images]]
+file = "05-secure-1-finding.png"
+alt = '''Copilot code review on pull request #17: the search concatenates text without parameterization, so a value with a quote becomes SQL logic rather than search text'''
+
+[[steps]]
+lane = "check"
+role = "CodeQL"
+label = "Flags it too"
+ref = "SQL injection"
+title = "CodeQL flags it too."
+text = '''CodeQL found the same flaw: a SQL query built from a user-provided value.'''
+
+[[steps.images]]
+file = "05-secure-2-codeql.png"
+alt = '''CodeQL's alert on pull request #17: this query depends on a user-provided value'''
+
+[[steps]]
+lane = "person"
+label = "Files the remediation"
+ref = "Issue #23"
+title = "A person files the remediation."
+text = '''Issue [#23], in the *Secure: remediate* form's format, carries the finding. The owner assigned it to Copilot with `secure-github`, on the lab branch.'''
+
+[[steps.images]]
+file = "05-secure-3-issue.png"
+alt = '''Issue #23, "Secure: parameterize the lab search, tests first", describing the unsafe search on the undeployed lab branch'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot cloud agent"
+label = "Regression, then the repair"
+ref = "PR #24"
+title = "Copilot commits the regression, then the repair."
+text = '''In [#24], Copilot copied the accelerator's regression tests unchanged, [`2298b1e`](prc:24/2298b1e), then parameterized the search, [`ae5ce36`](prc:24/ae5ce36).'''
+
+[[steps.images]]
+file = "05-secure-4-session.png"
+alt = '''Copilot's session for the repair: implementing secure parameterization for the lab search, and its tests'''
+
+[[steps.images]]
+file = "05-secure-5-commits.png"
+alt = '''The commits of pull request #24, "Parameterize request search and preserve literal LIKE semantics": the plan, the regression tests, then the repair'''
+
+[[steps]]
+lane = "check"
+role = "Trusted replay"
+label = "Proves the repair"
+ref = "10 of 10"
+gate = { text = "CodeQL rescan", state = "pass" }
+title = "The trusted replay proves it."
+text = '''Run from `main` ([run](run:44098557895)), the replay checks that the regression is exactly the reference in [`solutions/05-secure-github/regression/`](tree:solutions/05-secure-github/regression), and that the repair changed no other file. Then it runs the regression on isolated copies of the code before and after the repair. 6 of its 10 cases failed before the repair; after it, all 10 passed, and so did the full suite. A CodeQL scan of the repair branch confirmed the alert is gone ([run](run:44100119817)). Copilot code review of the repair found no open issues, and left the acceptance to these two checks.'''
+
+[[steps.images]]
+file = "05-secure-6-replay.png"
+alt = '''The trusted replay of the remediation, run from main: the deterministic replay summary'''
+
+[[steps]]
+lane = "person"
+label = "Approves; the lab closes"
+ref = "SECURE_REPLAY_PR=24"
+title = "A person approves, and the lab closes."
+text = '''#17 and #24 closed unmerged, as the lab requires, and #23 closed as completed. #24 became the reference repair that the nightly replay proves again.'''
+
+[[artifacts]]
+kind = "Pull request"
+name = "#17 Secure lab: review the unsafe search"
+href = "pr:17"
+note = '''The lab: one commit that builds SQL from the search text. Closed unmerged.'''
+
+[[artifacts]]
+kind = "Comment"
+name = "Copilot code review's finding"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/pull/17#discussion_r4600387645"
+note = '''The injection, and the literal `LIKE` semantics to keep.'''
+
+[[artifacts]]
+kind = "Scan"
+name = "CodeQL's alert"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/pull/17#discussion_r4600361905"
+note = '''A SQL query built from a user-provided value.'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#23 Secure: parameterize the lab search, tests first"
+href = "issue:23"
+note = '''The remediation request, with its acceptance criteria.'''
+
+[[artifacts]]
+kind = "Pull request"
+name = "#24 Parameterize request search and preserve literal LIKE semantics"
+href = "pr:24"
+note = '''The regression, then the repair, into the lab branch. Closed unmerged; the nightly replay's reference.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "The trusted replay"
+href = "run:44098557895"
+note = '''PASS: 6 of 10 cases fail before the repair; all 10, and the full suite, pass after it.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "CodeQL scan of the repair"
+href = "run:44100119817"
+note = '''Expecting the alert gone: it was.'''
+
+[[artifacts]]
+kind = "Folder"
+name = "solutions/05-secure-github/regression/"
+href = "tree:solutions/05-secure-github/regression"
+note = '''The reference regression the replay compares Copilot's copy with.'''
+
+[[artifacts]]
+kind = "File"
+name = ".github/workflows/secure-github-verify.yml"
+href = "blob:.github/workflows/secure-github-verify.yml"
+note = '''The replay, which runs every night with the repository variable `SECURE_REPLAY_PR` set to 24.'''
+
+[[criteria]]
+criterion = '''Copilot works as `secure-github`'''
+check = '''The assignment'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''The supplied regression is copied unchanged, and committed first, on its own, with real failed assertions'''
+check = '''The trusted replay compares it with the reference, and runs it before the repair'''
+result = '''Met: 6 of 10 cases fail before'''
+state = "met"
+
+[[criteria]]
+criterion = '''The fix changes only `ListAsync`, keeping role and department scope, public ids, filters, ordering, and pagination'''
+check = '''The replay refuses a repair that changes any other file; the regression's visibility cases'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''The identical regression passes after the repair, and so does the full suite'''
+check = '''The trusted replay'''
+result = '''PASS: 10 of 10, and the full suite'''
+state = "met"
+
+[[criteria]]
+criterion = '''The fix is a separate commit; both SHAs and the commands are in the pull request; it targets the lab branch, never `main`'''
+check = '''The pull request'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''A person runs the trusted replay and requests a fresh review, and CodeQL rescans'''
+check = '''The replay; a new Copilot code review; a CodeQL scan that expects the alert gone'''
+result = '''PASS; no open issues; the alert is gone'''
+state = "met"
+
+[[criteria]]
+criterion = '''A person decides'''
+check = '''The owner'''
+result = '''Approved; the lab closed unmerged'''
+state = "met"

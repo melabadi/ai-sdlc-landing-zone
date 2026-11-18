@@ -31,3 +31,6 @@ __pycache__/
 !.env.example
 *.local.json
 out/
+
+# The guide's build output (python site/build.py)
+_site/

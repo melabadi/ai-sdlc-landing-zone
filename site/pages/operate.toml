@@ -1,0 +1,211 @@
+# Phase 07, Operate. Steps, artifacts, acceptance criteria, and next step of the recorded run.
+kind = "phase"
+slug = "operate"
+number = 7
+name = "Operate"
+title = "From an incident to a proven fix"
+accelerator = "solutions/07-operate-github"
+lead = '''The Operate accelerator triages an incident into a sourced record and one bounded follow-up. Copilot then writes a regression test that fails on the current code, and the smallest fix, and a check proves that the test catches the defect.'''
+criteria_source = "[#33]"
+criteria_intro = '''The triage meets the record that the accelerator's `incident-evidence` skill defines: a severity and an area from the rubric, a UTC timeline with a source on every row, facts kept apart from hypotheses, the missing evidence, and exactly one bounded follow-up. The owner read it before deciding, and the session checked its code citations: one line number was 5 off. The follow-up's own criteria:'''
+next = '''The fix ships in the next release. The incident stays open: the triage named two more follow-ups that it didn't create, and a person decides whether to file them. They are an alert when the backlog log or gauge goes stale, and per-send timeout guidance for adapters. Each would go round the same loop: a follow-up Issue, Copilot's test and fix, the proof, and a person's decision.'''
+
+[overview]
+output = ["triage", "proven fix"]
+starts = '''The *Operate: report an incident* form, or [the Copilot CLI runbook](blob:docs/runbooks/incident-triage.md)'''
+copilot = '''Triages the incident into one follow-up; writes the regression test and the fix'''
+gate = '''*Prove the regression test*: it fails without the fix'''
+person = '''Files the triage, assigns the follow-up, and reviews'''
+
+[facts]
+starts = '''Incident [#32], the accelerator's sample report'''
+produces = '''A sourced triage and follow-up [#33]; the test and the fix, in [#34]'''
+complete = '''*Prove the regression test*: PROVEN'''
+decides = '''Sends the follow-up to Copilot, starts its checks, and merges the fix'''
+
+[[steps]]
+lane = "person"
+label = "Files the incident"
+ref = "Issue #32"
+title = "A person files the incident."
+text = '''Issue [#32], in the *Operate: report an incident* form's format, is the accelerator's sample incident INC-2041, unchanged: in staging, reviewers got notifications late and repeatedly.'''
+
+[[steps.images]]
+file = "07-operate-1-incident.png"
+alt = '''Incident #32, "INC-2041: reviewers notified late and repeatedly (staging)", with the incident form's fields'''
+
+[[steps]]
+lane = "copilot"
+role = "Agentic workflow"
+label = "Triages it"
+ref = "Severity 3 · worker"
+title = "The agentic triage writes the record."
+text = '''It gave severity 3, area worker, status Mitigated, and labeled the incident ([run](run:44145780113)). Its UTC timeline names a source on every row. It keeps the observed facts apart from three hypotheses, rules out the third with a log line, and lists the missing evidence. Its code citations are close: `SaveChangesAsync` is at line 105, not 100.'''
+
+[[steps.images]]
+file = "07-operate-2-triage.png"
+alt = '''The incident triage: severity 3, area worker, status Mitigated; a timeline with a source for every row; observed facts; three hypotheses with their support and confidence; missing evidence; and the follow-up'''
+
+[[steps]]
+lane = "copilot"
+role = "Agentic workflow"
+label = "Opens one bounded follow-up"
+ref = "Issue #33"
+title = "The triage opens one bounded follow-up."
+text = '''Sub-issue [#33]: count a timed-out delivery as a failed attempt instead of stalling the queue. It has six acceptance criteria. Its scope is one test file, plus one production file only if the test fails.'''
+
+[[steps.images]]
+file = "07-operate-3-follow-up.png"
+alt = '''Follow-up #33, labeled incident-followup, with the incident as its parent: why, the failure mode to reproduce, six acceptance criteria, the scope, and the evidence from the incident'''
+
+[[steps]]
+lane = "person"
+label = "Sends it to Copilot"
+ref = "operate-github"
+title = "A person sends the follow-up to Copilot."
+text = '''The owner read the triage and the follow-up, and assigned it to Copilot with the `operate-github` agent and the base branch `main`. Copilot opened [#34] within seconds.'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot cloud agent"
+label = "Test first, then a one-line fix"
+ref = "PR #34"
+title = "Copilot writes the test first, then the smallest fix."
+text = '''It pushed the tests first, [`94f0995`](prc:34/94f0995), then the one-line fix, [`b9cf04e`](prc:34/b9cf04e), then two commits that only clean up the tests' data. Its summary includes the proof it ran itself.'''
+
+[[steps.images]]
+file = "07-operate-4-session.png"
+alt = '''Copilot's session for the follow-up: its summary, a proof table with three tests that fail before the fix and pass with it, 83 tests passed, and GPT-6 Luna with 5.3 AI credits'''
+
+[[steps]]
+lane = "person"
+label = "Starts the checks"
+ref = "5 workflows"
+title = "A person starts the checks."
+text = '''Copilot's push started no workflow on its own. The session started the five waiting workflows of its last commit for the owner.'''
+
+[[steps.images]]
+file = "07-operate-5-approve-workflows.png"
+alt = '''Pull request #34 with Copilot's description and commits, and the merge box: 5 workflows awaiting approval, with the Approve workflows to run button'''
+
+[[steps]]
+lane = "check"
+label = "Proves it"
+ref = "PROVEN"
+title = "The proof shows which tests catch the defect."
+text = '''*Prove the regression test* reported PROVEN ([run](run:44149876340)): the three new timeout tests fail on the code before the change and pass with it. Before the change, 80 tests passed and 3 failed; after it, 83 passed. The fourth new test checks that a shutdown still cancels the work. It passes on both, because it guards what the old code already did. CI passed.'''
+
+[[steps.images]]
+file = "07-operate-6-proof.png"
+alt = '''The regression proof: PROVEN, three timeout tests that failed before the change and passed with it, 80 passed and 3 failed before the change, and 83 passed at the head'''
+
+[[steps]]
+lane = "person"
+label = "Reviews and merges"
+ref = "2399b96"
+title = "A person reviews the one-line fix, and merges it."
+text = '''The catch filter now treats a timeout as a failed attempt, unless the worker itself is stopping. The fix merged into `main` as [`2399b96`](commit:2399b96), and #33 closed.'''
+
+[[steps.images]]
+file = "07-operate-7-diff.png"
+alt = '''Files changed on pull request #34: in NotificationProcessor.cs, the catch filter becomes "ex is not OperationCanceledException || !ct.IsCancellationRequested"; below it, the test file'''
+
+[[steps.images]]
+file = "07-operate-8-decision.png"
+alt = '''Pull request #34, merged: the owner's decision comment, the ready-for-review event, and the merge commit 2399b96 with 13 checks passed'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#32 INC-2041: reviewers notified late and repeatedly (staging)"
+href = "issue:32"
+note = '''The incident, with the triage and the labels `severity:3` and `area:worker`.'''
+
+[[artifacts]]
+kind = "Comment"
+name = "The incident triage"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/issues/32#issuecomment-6956961031"
+note = '''A sourced UTC timeline, facts apart from hypotheses, the missing evidence, and the follow-up.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Agentic incident triage"
+href = "run:44145780113"
+note = '''The run the `incident` label started.'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#33 [follow-up] Count a timed-out delivery as a failed attempt instead of stalling the queue"
+href = "issue:33"
+note = '''The follow-up, a sub-issue of #32, closed by the fix.'''
+
+[[artifacts]]
+kind = "Merged pull request"
+name = "#34 Count notification timeouts as failed delivery attempts"
+href = "pr:34"
+note = '''Copilot's tests and fix, the proof, and the decision.'''
+
+[[artifacts]]
+kind = "Commit"
+name = "2399b96"
+href = "commit:2399b96"
+note = '''The fix, merged into `main`.'''
+
+[[artifacts]]
+kind = "File"
+name = "app/src/RequestHub.Core/Notifications/NotificationProcessor.cs"
+href = "blob:app/src/RequestHub.Core/Notifications/NotificationProcessor.cs"
+note = '''The one-line fix to the catch filter.'''
+
+[[artifacts]]
+kind = "File"
+name = "app/tests/RequestHub.Tests/WorkerAndContractTests.cs"
+href = "blob:app/tests/RequestHub.Tests/WorkerAndContractTests.cs"
+note = '''The four timeout tests.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Prove the regression test"
+href = "run:44149876340"
+note = '''PROVEN: 3 tests fail before the change and pass with it.'''
+
+[[criteria]]
+criterion = '''A timeout while the worker runs doesn't throw: Attempts is 1, LastError is set, and the retry waits with backoff'''
+check = '''`Timed_out_delivery_is_retried_with_backoff`'''
+result = '''Fails before the fix, passes after'''
+state = "met"
+
+[[criteria]]
+criterion = '''At `MaxAttempts`, the notification is Failed and counted in the backlog'''
+check = '''`Timed_out_delivery_is_failed_after_max_attempts_and_counted_in_backlog`'''
+result = '''Fails before the fix, passes after'''
+state = "met"
+
+[[criteria]]
+criterion = '''A worker shutdown still cancels'''
+check = '''`Cancellation_during_delivery_still_propagates`'''
+result = '''Passes before and after'''
+state = "met"
+
+[[criteria]]
+criterion = '''When one notification times out, the batch's others are saved as Sent, and not redelivered'''
+check = '''`Timed_out_delivery_does_not_prevent_other_batch_deliveries`'''
+result = '''Fails before the fix, passes after'''
+state = "met"
+
+[[criteria]]
+criterion = '''The new test fails on `main` and passes with the change'''
+check = '''*Prove the regression test*'''
+result = '''PROVEN'''
+state = "met"
+
+[[criteria]]
+criterion = '''Every existing test passes, and nothing is weakened'''
+check = '''CI; the diff'''
+result = '''83 of 83; no assertion changed'''
+state = "met"
+
+[[criteria]]
+criterion = '''A person decides'''
+check = '''The owner's review'''
+result = '''Approved and merged'''
+state = "met"
