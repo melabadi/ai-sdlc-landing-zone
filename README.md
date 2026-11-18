@@ -25,7 +25,7 @@ flowchart TB
   GOV --- ACC --- FND --- APP
 ```
 
-- **See it work:** [one release cycle through all seven phases](docs/see-it-work/README.md), run live on 17 November 2026: from stakeholder notes to a published release and a proven incident fix, with nine decisions made by a person, and every step's screenshots, links, timings, and AI credits.
+- **See it work:** [one release cycle through all seven phases](docs/see-it-work/README.md), run live on 17 November 2026: from stakeholder notes to a published release and a proven incident fix, with nine decisions made by a person. For each phase: its steps with screenshots, its artifacts, its acceptance criteria and how each was checked, and its next step.
 - **Build your own:** [install the seven in your repository](#build-your-own-landing-zone), each with its README's commands, then the [one-time setup](#3-set-up-what-they-share-once) they share. Here the seven installs took 20 minutes 33 seconds, and the one-time setup about 5 more, apart from the token you create yourself.
 - **Files to edit to tweak it:** [the landing zone's own files](#files-to-edit-to-tweak-it), and each accelerator's list.
 - **Check it:** [`tools/check_landing_zone.py`](tools/check_landing_zone.py) reads the repository and reports, for every accelerator, whether it is installed, set up, and green: [48 passed, 0 failed](#the-wiring-check).
