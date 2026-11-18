@@ -1,0 +1,103 @@
+# The results: what the run found, what it cost, and how to run it again.
+kind = "results"
+slug = "results"
+nav_title = "What the run found"
+eyebrow = "Results"
+title = "What the run found, and what it cost"
+lead = '''Seven things the run surfaced that a single accelerator's run doesn't show, the AI credits and runner minutes it used, and what to change before you run a phase again.'''
+findings_lead = '''Each one is in the run's artifacts, and most changed how the landing zone is set up.'''
+
+[[findings]]
+title = '''Copilot's pull requests carry the name of whoever assigns Copilot.'''
+text = '''Copilot cloud agent opened every pull request and pushed every commit in the owner's account, with Copilot as co-author: "Copilot started work on behalf of melabadi". GitHub doesn't let authors approve their own pull requests, so the owner recorded each decision as a comment review that starts "Decision:". The Test accelerator's review evidence counts only approvals and requested changes, so it shows the decision as pending. In a team, the reviewer who decides should be someone other than the person who assigned Copilot.'''
+
+[[findings]]
+title = '''A reviewer's own test is still worth writing.'''
+text = '''In [Develop](page:develop#step-4), a browser test written from the acceptance criteria found a defect that Copilot's tests, its own race and audit regressions included, had missed. Copilot fixed the code and left the test alone.'''
+
+[[findings]]
+title = '''Copilot code review was most of the AI cost, and earned it.'''
+text = '''Five reviews used 398.5 of about 524 AI credits; the ADR's first review alone used 133.2. They found the injection, three policy gaps in the ADR, and a fourth gap on re-review. On the repair, the review found no issues and still deferred to the trusted replay and the CodeQL rescan rather than to Copilot's own tests. Request reviews where their findings can change a decision.'''
+
+[[findings]]
+title = '''Start only the head commit's waiting runs.'''
+text = '''On [#24], starting every waiting run of the branch started older commits' runs last, and their concurrency group cancelled the head commit's runs, so the session ran those again. The Operate README's command starts only the head commit's runs, which avoids it.'''
+
+[[findings]]
+title = '''Release images can collide with another repository's packages.'''
+text = '''The Release accelerator pushed its images as `ghcr.io/<owner>/requesthub-*`, and the owner's account already had a `requesthub-worker` package, which belongs to the source repository. [#31] puts them under the repository's own path. Any repository whose owner already has `requesthub-*` packages elsewhere would hit it.'''
+
+[[findings]]
+title = '''One web test is flaky.'''
+text = '''On `fe8c098`, a commit that changed only the ADR, *Web UI checks* failed although every test passed: Vitest reported an unhandled `ReferenceError: window is not defined` during the teardown of `DecisionPanel.test.tsx`. Running the job again passed.'''
+
+[[findings]]
+title = '''Check the triage's citations.'''
+text = '''One of its line numbers was 5 lines off. Its timeline, facts, and hypotheses held, and [the proof](page:operate#step-7) confirmed the first hypothesis.'''
+
+[cost]
+lead = '''About 524 AI credits and 212.7 minutes of GitHub-hosted runners, for the whole cycle.'''
+columns = ["What ran", "How many", "AI credits", "Runner minutes"]
+rows = [
+  ["Copilot cloud agent sessions, on GPT-6 Luna", "8", "48.3", "77.5"],
+  ["Copilot code reviews, at balanced review effort", "5", "398.5", "18.8"],
+  ["Agentic workflows, on auto (Claude Sonnet 5.5)", "4", "about 73, plus about 4 for threat detection", "23.7"],
+  ["CI, CodeQL, and the accelerators' deterministic checks", "", "none", "92.7"],
+]
+total = ["Total", "", "about 524", "212.7"]
+note = '''Each Copilot session's page and each review's session page reports its AI credits; the agentic workflows' footers report theirs, rounded. The runner minutes add up the jobs of the 202 workflow runs started during the run, measured from the Actions API. They are free on a public repository. In a private one, each job is rounded up to a whole minute, so they would count as 356 minutes of your plan's included usage.'''
+
+[[cost.details]]
+title = "Copilot cloud agent sessions"
+columns = ["Session", "AI credits"]
+rows = [
+  ["Plan: the brief, [#14]", "1.9"],
+  ["Test: the tests, then the fix, [#16]", "5"],
+  ["Secure: the regression, then the repair, [#24]", "5.4"],
+  ["Design: the ADR, [#29]", "3.5"],
+  ["Design: the revision after code review, [#29]", "2"],
+  ["Develop: the feature, [#27]", "21.9"],
+  ["Develop: the fix for the reviewer's test, [#27]", "3.3"],
+  ["Operate: the regression test and the fix, [#34]", "5.3"],
+]
+
+[[cost.details]]
+title = "Copilot code reviews"
+columns = ["Review", "AI credits"]
+rows = [
+  ["The Secure lab's unsafe search, [#17]", "89.8"],
+  ["The Test fix, [#16]", "58.5"],
+  ["The Secure repair, [#24]", "32.3"],
+  ["ADR 0001, first review, [#29]", "133.2"],
+  ["ADR 0001, re-review, [#29]", "84.7"],
+]
+
+[[cost.details]]
+title = "Agentic workflows"
+columns = ["Workflow", "AI credits, agent plus detection"]
+rows = [
+  ["Design review, [#28]", "about 22 + 1"],
+  ["CI failure investigation, [#30]", "about 14 + 1"],
+  ["Release summary, `demo-v1.0.0`", "about 14 + 1"],
+  ["Incident triage, [#32]", "about 23 + 1"],
+]
+
+[again]
+lead = '''The run changed this repository: `main` now has the brief, ADR 0001, the routing confirmation, the release image path, and the timeout fix. Before you repeat a phase:'''
+closing = '''The backlog, [#18] to [#22], and the incident, [#32], stay open on purpose: the backlog is the team's, and the incident's two remaining follow-ups are a person's call.'''
+
+[[again.items]]
+title = "Plan, Design, and Develop"
+text = '''To start again from the same notes, question, or feature, give Copilot a base branch made from [`a60b162`](commit:a60b162), `main` before the run.'''
+
+[[again.items]]
+title = "Test and Secure"
+text = '''Their labs start from `main`, as their READMEs describe. Close this run's Test lab, Issue [#15] and pull requests [#16] and [#30], as the Test README's reset does.'''
+
+[[again.items]]
+title = "Release"
+text = '''Request a new version, such as `1.0.1`: `demo-v1.0.0` is published.'''
+
+[[again.items]]
+title = "Operate"
+text = '''The timeout defect is fixed on `main`, so a follow-up from the sample incident would now get COVERAGE, not PROVEN. To see PROVEN, revert [`2399b96`](commit:2399b96) on a branch, and give that branch to Copilot as the base.'''

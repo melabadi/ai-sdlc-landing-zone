@@ -1,0 +1,198 @@
+# Phase 04, Test. Steps, artifacts, acceptance criteria, and next step of the recorded run.
+kind = "phase"
+slug = "test"
+number = 4
+name = "Test"
+title = "A defect fixed test-first"
+accelerator = "solutions/04-test-github"
+lead = '''The Test accelerator has Copilot reproduce a reported defect, commit failing regression tests on their own, and only then fix the code, so a reviewer sees the tests fail before the fix and pass after it. It also explains why CI is red.'''
+criteria_source = "[#15]"
+next = '''In the lab, the fix stays unmerged by design, so the lab can run again; the Test README's reset closes #15, #16, and #30. On a real defect, the same pull request targets `main`, passes the same checks, and ships in the next release.'''
+
+[overview]
+output = ["tests first", "then the fix"]
+starts = '''The *Test: defect to fix test-first with Copilot* form, assigned with `test-github` on a `lab/test-*` branch'''
+copilot = '''Commits failing tests, then the fix; explains a red CI run'''
+gate = '''*Regression tests fail before the fix and pass after it*'''
+person = '''Approves the fix'''
+
+[facts]
+starts = '''Issue [#15], on the `lab/test-duplicate-decision` branch'''
+produces = '''Failing tests, then the fix, in [#16]'''
+complete = '''The new tests fail before the fix and pass after it: 4 of 4'''
+decides = '''Approves the fix, which stays on the lab'''
+
+[[steps]]
+lane = "person"
+label = "Reports the defect, on a lab"
+ref = "Issue #15"
+title = "A person reports the defect, on a lab."
+text = '''The lab branch `lab/test-duplicate-decision` is `main`, plus the defect's scenario and the accelerator's lab patch, which lets a request be decided more than once. Issue [#15], in the *Test: defect to fix test-first with Copilot* form's format, reports it. The owner assigned it to Copilot with `test-github`, with the lab branch as the base.'''
+
+[[steps.images]]
+file = "04-test-1-issue.png"
+alt = '''Issue #15, "Test: a request can be decided more than once", describing the observed behavior on the lab branch'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot cloud agent"
+label = "Failing tests, then the fix"
+ref = "PR #16"
+title = "Copilot reproduces it, commits the failing tests, then the fix."
+text = '''The scenario reproduced the defect. In [#16], Copilot pushed four failing tests on their own, [`20d3b2f`](prc:16/20d3b2f), then the fix, [`8df47e9`](prc:16/8df47e9). After the fix, the scenario no longer reproduces it.'''
+
+[[steps.images]]
+file = "04-test-2-session.png"
+alt = '''Copilot's session for the defect, analyzing the request decision behavior'''
+
+[[steps.images]]
+file = "04-test-3-commits.png"
+alt = '''The commits of pull request #16: the plan, "Add failing regression tests for #15", then the fix'''
+
+[[steps]]
+lane = "check"
+label = "Proves it, test-first"
+ref = "4 of 4"
+title = "The proof runs the tests at both commits."
+text = '''All 4 new tests fail at the tests-only commit and pass with the fix ([run](run:44095944784)). Copilot code review recommended approval, with no open issues.'''
+
+[[steps.images]]
+file = "04-test-4-proof.png"
+alt = '''The test-first proof on pull request #16: regression tests fail before the fix and pass after it'''
+
+[[steps]]
+lane = "check"
+role = "Review evidence"
+label = "Posts the review evidence"
+ref = "review_evidence.py"
+title = "The review evidence is posted."
+text = '''The accelerator's `review-evidence` skill keeps the deterministic acceptance apart from the review comments, in one comment on the pull request.'''
+
+[[steps.images]]
+file = "04-test-5-evidence.png"
+alt = '''The review evidence for #16: a table of deterministic acceptance checks, all passing, before the review comments'''
+
+[[steps]]
+lane = "person"
+label = "Approves the fix"
+ref = "stays on the lab"
+title = "A person approves."
+text = '''The fix stays on its pull request into the lab branch, unmerged, as the lab requires.'''
+
+[[steps.images]]
+file = "04-test-6-decision.png"
+alt = '''The owner's decision on pull request #16: approved, with the proof, CI, the bounds check, and Copilot code review checked; the fix stays unmerged on the lab'''
+
+[[steps]]
+lane = "copilot"
+role = "Agentic workflow"
+label = "Explains a red CI run"
+ref = "PR #30"
+title = "A red CI run is explained."
+text = '''Pull request [#30] has the regression tests and no fix, so CI failed. The agentic CI failure investigation ([run](run:44096808233)) labeled it `ci:defect-reproduced`: the three failing tests are the ones the pull request adds, and they fail as intended.'''
+
+[[steps.images]]
+file = "04-test-7-ci-investigation.png"
+alt = '''Pull request #30, "Decide a request only once: regression tests first", labeled ci:defect-reproduced, with the CI failure investigation's comment'''
+
+[[artifacts]]
+kind = "Branch"
+name = "lab/test-duplicate-decision"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/tree/lab/test-duplicate-decision"
+note = '''The lab: `main`, the defect's patch, and its scenario. It never merges.'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#15 Test: a request can be decided more than once"
+href = "issue:15"
+note = '''The defect report, with its six expected behaviors.'''
+
+[[artifacts]]
+kind = "Pull request"
+name = "#16 Make request decisions idempotent and concurrency-safe"
+href = "pr:16"
+note = '''The tests-only commit, then the fix, into the lab branch.'''
+
+[[artifacts]]
+kind = "Commit"
+name = "20d3b2f"
+href = "prc:16/20d3b2f"
+note = '''The four failing tests, on their own.'''
+
+[[artifacts]]
+kind = "Commit"
+name = "8df47e9"
+href = "prc:16/8df47e9"
+note = '''The fix, in `RequestWorkflow.cs`.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Prove the fix test-first"
+href = "run:44095944784"
+note = '''All 4 new tests fail before the fix and pass after it.'''
+
+[[artifacts]]
+kind = "Comment"
+name = "Review evidence for #16"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/pull/16#issuecomment-6950059336"
+note = '''Deterministic acceptance first, then the review comments.'''
+
+[[artifacts]]
+kind = "Pull request"
+name = "#30 Decide a request only once: regression tests first"
+href = "pr:30"
+note = '''Red CI on purpose, explained and labeled `ci:defect-reproduced`.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Agentic CI failure investigation"
+href = "run:44096808233"
+note = '''The run that explained #30's red CI.'''
+
+[[criteria]]
+criterion = '''A request has at most one decision; the first wins'''
+check = '''`Concurrent_approvers_record_only_the_first_decision`'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''A retry by the same approver with the same `Idempotency-Key` returns `200` with the original decision, and records nothing new'''
+check = '''`Same_key_retry_returns_original_and_later_decision_conflicts`, `Concurrent_same_key_retries_create_one_decision_and_replay_the_rest`'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''Any other later attempt returns `409` and `decision.already_decided`, with the existing decision'''
+check = '''`Same_key_retry_returns_original_and_later_decision_conflicts`'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''Concurrent attempts, such as a double-click or two approvers, produce exactly one `201`, and never a `500`'''
+check = '''`Concurrent_double_click_records_one_decision_and_conflicts_for_the_rest`, and the other concurrent tests'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''Exactly one `decision.recorded` audit entry and one requester notification'''
+check = '''The tests' shared check, `AssertSingleDecisionAndNotificationAsync`'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''Approval authority doesn't change'''
+check = '''The existing authorization tests, in CI'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''The tests fail before the fix and pass after it'''
+check = '''*Regression tests fail before the fix and pass after it*'''
+result = '''4 of 4'''
+state = "met"
+
+[[criteria]]
+criterion = '''A person decides'''
+check = '''The owner's review'''
+result = '''Approved; it stays on the lab'''
+state = "met"

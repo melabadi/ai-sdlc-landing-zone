@@ -1,0 +1,169 @@
+# The home page: what the landing zone is, how it works, the seven phases, what they share, and how to build your own.
+kind = "home"
+slug = "home"
+nav_title = "The guide to an end-to-end run"
+eyebrow = "GitHub Copilot · AI across the software development lifecycle"
+title = "One repository. Seven phases. A person at every decision."
+lead = '''
+This landing zone runs an application and all seven AI-SDLC accelerators on GitHub together, from stakeholder notes to the fix for an incident. Copilot proposes, deterministic checks decide whether the work is complete, and a person makes every decision.
+
+This guide walks through one live run of all seven, step by step, with a link to every artifact it produced.
+'''
+
+[[stats]]
+value = "7"
+label = "accelerators, run live end to end"
+
+[[stats]]
+value = "9"
+label = "decisions, each made by a person"
+
+[[stats]]
+value = "6"
+label = "checks required before anything merges into `main`"
+
+[[stats]]
+value = "0"
+label = "mocks: every session, review, and check ran for real"
+
+[how]
+eyebrow = "How it works"
+title = "Copilot proposes. Checks decide it is complete. A person decides."
+lead = '''Each phase has its Copilot custom agent, its skills, its deterministic checks, and its entry point: an issue form, a command, a label, or a workflow. What the seven share is set up once.'''
+accelerators = "Seven accelerators, one per phase"
+caption = '''Select a phase to walk through it. In the recorded run, Test and Secure worked on lab branches with planted defects, beside the main line, and never merged.'''
+
+[[how.principles]]
+lane = "copilot"
+title = "Copilot proposes"
+text = '''A Copilot cloud agent session drafts the brief, the ADR, the feature, the fix, or the repair. Copilot code review and four agentic workflows review the work, explain red CI, summarize a release, and triage an incident.'''
+
+[[how.principles]]
+lane = "check"
+title = "Checks decide it is complete"
+text = '''Deterministic checks that a model can't argue past: the brief's validator, the ADR checker, the feature's bounds, the test-first proofs, the trusted replay, and the release gates.'''
+
+[[how.principles]]
+lane = "person"
+title = "A person decides"
+text = '''Only a person approves, merges, publishes, or sends the work back. The ruleset on `main` and the release environment enforce it.'''
+
+[[how.layers]]
+kind = "gov"
+name = "Governance, set once"
+chips = [
+  '''Ruleset on `main`: a pull request and six required checks''',
+  '''Environment `release-github`: `main` only, a required reviewer''',
+  '''Actions: a read-only token; fork runs wait for approval''',
+  '''Security: secret scanning, push protection, CodeQL''',
+  '''Copilot code review: the owner and collaborators only''',
+]
+
+[[how.layers]]
+kind = "found"
+name = "Shared foundation"
+chips = [
+  '''Copilot's instructions and environment''',
+  '''CI on every pull request''',
+  '''25 labels''',
+  '''One token: `COPILOT_GITHUB_TOKEN`''',
+  '''gh-aw v1.2.2''',
+  '''7 custom agents and 15 skills''',
+]
+
+[[how.layers]]
+kind = "app"
+name = "The application"
+text = '''RequestHub, in [`app/`](tree:app): a small request-and-approval portal, with a .NET 10 API and worker, a React web UI, and PostgreSQL. All its people, requests, and policies are synthetic.'''
+
+[run]
+eyebrow = "The run, phase by phase"
+title = "Walk through one release cycle"
+lead = '''On 17 November 2026, all seven accelerators ran live on one backlog. Each phase's page shows its steps with screenshots, the artifacts with links, the acceptance criteria and how each was checked, and its next step.'''
+
+[setup]
+eyebrow = "Set up once"
+title = "What the seven share"
+lead = '''The landing zone sets up the shared pieces once, so every phase works on the same backlog, under the same rules.'''
+
+[[setup.governance]]
+name = '''Ruleset *Protect main*'''
+value = '''A pull request before every merge, no deletion, no force push, and no bypass. It requires *Feature stays within its bounds*, *API and worker tests*, *Web UI checks*, *Browser tests*, *ADR checks*, and *API contract compatibility*.'''
+why = '''Each required check runs on every pull request, so none stays pending.'''
+
+[[setup.governance]]
+name = '''Environment `release-github`'''
+value = '''Deployments from `main` only, a required reviewer, and no administrator bypass.'''
+why = '''The release waits for a person.'''
+
+[[setup.governance]]
+name = "Actions"
+value = '''The workflow token reads by default and can't approve pull requests. Runs from every outside contributor's fork wait for approval.'''
+why = '''What a public copy of the accelerators asks for.'''
+
+[[setup.governance]]
+name = "Security"
+value = '''Secret scanning, push protection, Dependabot alerts, and private vulnerability reporting, with CodeQL from Secure's scan.'''
+why = '''Free on a public repository.'''
+
+[[setup.governance]]
+name = "Copilot code review"
+value = '''**Block reviews requested with an external Copilot license**: only the owner and direct collaborators can request a review.'''
+why = '''Outsiders can't start Copilot reviews here, even with their own license.'''
+
+[[setup.foundation]]
+name = "Labels."
+text = '''`ai-sdlc` and a `phase:` label on every form, and each accelerator's own, such as `brief-approved` and `incident-followup`.'''
+
+[[setup.foundation]]
+name = "Copilot's environment."
+text = '''[`copilot-setup-steps.yml`](blob:.github/workflows/copilot-setup-steps.yml) installs .NET, Node.js, Playwright, and Python, and starts PostgreSQL, for every agent that runs tests.'''
+
+[[setup.foundation]]
+name = "Copilot's instructions."
+text = '''[`copilot-instructions.md`](blob:.github/copilot-instructions.md) gives every agent the map of the repository, its commands, and the rules no change may break.'''
+
+[[setup.foundation]]
+name = "One token."
+text = '''The four agentic workflows share `COPILOT_GITHUB_TOKEN`; everything else works without it.'''
+
+[[setup.foundation]]
+name = "Agents and skills."
+text = '''Seven [custom agents](tree:.github/agents), one per phase, and 15 [skills](tree:.github/skills) with their procedures and scripts.'''
+
+[[setup.foundation]]
+name = "A wiring check."
+text = '''[`tools/check_landing_zone.py`](blob:tools/check_landing_zone.py) reports, for every accelerator, whether it is installed, set up, and green.'''
+
+[build]
+eyebrow = "Build your own"
+title = "Four steps to a landing zone of your own"
+lead = '''Start from your repository, with your app and its CI. Each accelerator's README says what to change for your stack.'''
+
+[[build.steps]]
+title = "Check your tools"
+href = "readme:#1-check-your-tools"
+text = '''GitHub CLI, PowerShell 7.4 or later, Python 3.12 or later, Copilot CLI, and gh-aw v1.2.2, with a Copilot plan that allows the cloud agent.'''
+
+[[build.steps]]
+title = "Install the seven in phase order"
+href = "readme:#2-install-the-seven-in-phase-order"
+text = '''Follow each accelerator's *Getting started*, one pull request each. Here the seven installs took 20 minutes 33 seconds.'''
+
+[[build.steps]]
+title = "Set up what they share, once"
+href = "readme:#3-set-up-what-they-share-once"
+text = '''CI on every pull request, the ruleset, the release environment, the Actions and security settings, Secure's nightly replay, and the token.'''
+
+[[build.steps]]
+title = "Check the wiring"
+href = "readme:#4-check-the-wiring"
+text = '''`python tools/check_landing_zone.py` ends with `0 failed` when every accelerator is installed, set up, and green.'''
+
+[about]
+title = "About this run"
+text = '''
+A GitHub Copilot agent session ran the demo in the repository owner's account. The owner made all nine decisions in the chat with that session, and the session carried them out in GitHub: it filed each Issue with its form's fields and labels, applied labels, posted reviews, started workflows, and merged. In a team, the people who decide make these clicks themselves.
+
+All data is synthetic. The Test and Secure defects are those accelerators' labs, planted on purpose on branches that never merge, and the incident is the Operate accelerator's sample report. The same run is also written up in Markdown, in [`docs/see-it-work/`](blob:docs/see-it-work/README.md).
+'''

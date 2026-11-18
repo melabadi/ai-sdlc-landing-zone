@@ -1,0 +1,165 @@
+# Phase 01, Plan. Steps, artifacts, acceptance criteria, and next step of the recorded run.
+kind = "phase"
+slug = "plan"
+number = 1
+name = "Plan"
+title = "Notes to a published backlog"
+accelerator = "solutions/01-plan-github"
+lead = '''The Plan accelerator turns stakeholder notes into a brief and a backlog in which every statement cites its source. It publishes the backlog only once a person approves it.'''
+criteria_source = "[#13]"
+next = '''Design takes task [#19] ([phase 02](page:design)), and Develop takes task [#21] ([phase 03](page:develop)). Tasks [#20] and [#22] stay in the backlog, and the conflict between T06 and T07 waits for a person's decision.'''
+
+[overview]
+output = ["brief", "backlog"]
+starts = '''The *Plan: refine requirements with Copilot* form, or `copilot --agent plan-github` with [`planning/refine-task.md`](blob:planning/refine-task.md)'''
+copilot = '''Drafts a brief and a backlog that cite [the notes](tree:planning/inputs)'''
+gate = '''*Validate the brief*: the schema, real citations, testable criteria'''
+person = '''Applies `brief-approved`, which publishes the epic and its tasks as Issues'''
+
+[facts]
+starts = '''Issue [#13], in the Plan form's format'''
+produces = '''A brief and a backlog that cite the notes, in [#14]'''
+complete = '''*Validate the brief*: VALID'''
+decides = '''Approves the brief, and its label publishes the backlog'''
+
+[[steps]]
+lane = "person"
+label = "Asks for the brief"
+ref = "Issue #13"
+title = "A person asks for the brief."
+text = '''Issue [#13], in the *Plan: refine requirements with Copilot* form's format, is assigned to Copilot with the `plan-github` agent. It asks for one epic and four bounded tasks from the workshop transcript and the routing policies in [`planning/inputs/`](tree:planning/inputs).'''
+
+[[steps.images]]
+file = "01-plan-1-issue.png"
+alt = '''Issue #13, "Plan: refine assisted-triage requirements", asking Copilot to refine the RequestHub assisted request triage requirements with the requirements-traceability skill'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot cloud agent"
+label = "Drafts the brief and the backlog"
+ref = "PR #14"
+title = "Copilot drafts the brief and the backlog."
+text = '''Copilot opened draft pull request [#14] within seconds. Its session wrote `planning/brief/backlog.json` and `brief.md`, and changed nothing else.'''
+
+[[steps.images]]
+file = "01-plan-2b-session.png"
+alt = '''Copilot's session for the brief, listing planning/brief/brief.md and planning/brief/backlog.json among its changes'''
+
+[[steps]]
+lane = "check"
+label = "Validates the brief"
+ref = "VALID"
+title = "A check validates them."
+text = '''Copilot's push started no workflow until a person approved its runs. *Validate the brief* then reported `VALID - 4 tasks, 4 open questions, 1/2 conflicts unresolved`.'''
+
+[[steps.images]]
+file = "01-plan-3-validate.png"
+alt = '''The "Validate the brief" job of the Plan workflow on pull request #14: the brief validation summary'''
+
+[[steps.images]]
+file = "01-plan-4-brief.png"
+alt = '''The planning/brief folder in the repository: backlog.json and brief.md, next to the inputs'''
+
+[[steps]]
+lane = "person"
+label = "Approves; the backlog is published"
+ref = "brief-approved"
+gate = { text = "Published #18 to #22", state = "pass" }
+title = "A person approves, and the backlog is published."
+text = '''The owner approved the brief, and the `brief-approved` label started the publisher ([run](run:44095785412)). It created epic [#18] and its four tasks as Issues, each with its source excerpts. The brief merged into `main`, and #13 closed.'''
+
+[[steps.images]]
+file = "01-plan-5-published.png"
+alt = '''Pull request #14, merged: the comment "Backlog published after review", listing the epic and its four tasks'''
+
+[[steps.images]]
+file = "01-plan-2-pull-request.png"
+alt = '''Pull request #14, "Refine assisted-triage requirements backlog", merged into main from Copilot's branch'''
+
+[[steps.images]]
+file = "01-plan-6-epic.png"
+alt = '''Epic #18, "[Plan/Copilot] Assisted request triage", published from planning/brief/backlog.json, with its four tasks linked as sub-issues'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#13 Plan: refine assisted-triage requirements"
+href = "issue:13"
+note = '''The request, assigned to Copilot with `plan-github`.'''
+
+[[artifacts]]
+kind = "Merged pull request"
+name = "#14 Refine assisted-triage requirements backlog"
+href = "pr:14"
+note = '''Copilot's brief and backlog, merged after the owner approved them.'''
+
+[[artifacts]]
+kind = "File"
+name = "planning/brief/brief.md"
+href = "blob:planning/brief/brief.md"
+note = '''The brief: the epic, the tasks, the open questions, and the conflicts, each citing its source.'''
+
+[[artifacts]]
+kind = "File"
+name = "planning/brief/backlog.json"
+href = "blob:planning/brief/backlog.json"
+note = '''The same backlog as data, which *Validate the brief* checks and the publisher reads.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Review and publish the brief"
+href = "run:44095785412"
+note = '''The run the `brief-approved` label started: it checked the brief again, then published it.'''
+
+[[artifacts]]
+kind = "Epic"
+name = "#18 Assisted request triage"
+href = "issue:18"
+note = '''The published epic, with its four tasks as sub-issues.'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#19 Generate policy-grounded recommendations safely"
+href = "issue:19"
+note = '''The task Design takes.'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#20 Present recommendations and manual fallback"
+href = "issue:20"
+note = '''In the backlog.'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#21 Confirm routing once with reviewer authority"
+href = "issue:21"
+note = '''The task Develop takes.'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#22 Audit assistant activity and establish the baseline"
+href = "issue:22"
+note = '''In the backlog.'''
+
+[[criteria]]
+criterion = '''One epic and exactly four bounded tasks, with owner roles, dependencies, and Given/When/Then acceptance criteria'''
+check = '''*Validate the brief*: the schema, and testable criteria'''
+result = '''VALID: 4 tasks'''
+state = "met"
+
+[[criteria]]
+criterion = '''Every item cites the transcript paragraph (T01 to T24) or the policy it comes from'''
+check = '''*Validate the brief*: real citations'''
+result = '''VALID'''
+state = "met"
+
+[[criteria]]
+criterion = '''Conflicts and unknowns are recorded, never guessed'''
+check = '''The brief, read by the owner'''
+result = '''4 open questions. Of 2 conflicts, the notes resolve one (T19 defers automatic routing). The other, whether computing equipment above the spend threshold goes to Finance or IT (T06 and T07), is left to a person'''
+state = "met"
+
+[[criteria]]
+criterion = '''Nothing is published until a person approves'''
+check = '''Only the `brief-approved` label starts the publisher'''
+result = '''The owner approved'''
+state = "met"

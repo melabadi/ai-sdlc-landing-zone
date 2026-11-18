@@ -1,0 +1,190 @@
+# Phase 02, Design. Steps, artifacts, acceptance criteria, and next step of the recorded run.
+kind = "phase"
+slug = "design"
+number = 2
+name = "Design"
+title = "A reviewed and accepted ADR"
+accelerator = "solutions/02-design-github"
+lead = '''The Design accelerator answers a design question with the architecture standards that apply. Copilot then writes an architecture decision record (ADR) that compares options against those standards, and a person accepts or rejects it.'''
+criteria_source = "[#28]"
+next = '''The ADR's seven implementation tasks become Develop Issues, each with its own acceptance criterion, once their open questions have owners. Neither profile may be enabled until the privacy and security policy owner decides how personal data is handled before it leaves the API (task 7). Open question 1, a direct conflict between two standards, is a person's decision.'''
+
+[overview]
+output = ["standards", "ADR"]
+starts = '''The *Design: architecture decision with Copilot* form, `/design-review` on an Issue or a pull request, or [`docs/architecture/adr-task.md`](blob:docs/architecture/adr-task.md)'''
+copilot = '''Answers `/design-review` with the [standards](tree:docs/architecture/standards) that apply; writes the ADR'''
+gate = '''*ADR checks* and *API contract compatibility*, required'''
+person = '''Accepts the ADR by name, or rejects it'''
+
+[facts]
+starts = '''Issue [#28], for backlog task #19, and `/design-review`'''
+produces = '''The standards that apply, then ADR 0001, in [#29]'''
+complete = '''*ADR checks*: PASS, with code review's findings addressed'''
+decides = '''Sends the review back, then accepts the ADR by name'''
+
+[[steps]]
+lane = "person"
+label = "Asks the design question"
+ref = "Issue #28"
+title = "A person asks the design question."
+text = '''Issue [#28], in the *Design: architecture decision with Copilot* form's format, asks how RequestHub should add a live AI triage provider, for backlog task #19. The owner commented `/design-review` and assigned the Issue to Copilot with `design-github`.'''
+
+[[steps.images]]
+file = "02-design-1-issue.png"
+alt = '''Issue #28, "Design: how should RequestHub add a live AI triage provider?", naming backlog item #19, with the labels ai-sdlc, phase:design, and standards-conflict'''
+
+[[steps]]
+lane = "copilot"
+role = "Agentic workflow"
+label = "Lists the standards that apply"
+ref = "/design-review"
+title = "The agentic design review lists the standards that apply."
+text = '''It quoted each standard with its id, version, and scope, and added the labels `adr-needed` and `standards-conflict` ([run](run:44096244741)).'''
+
+[[steps.images]]
+file = "02-design-2-review.png"
+alt = '''The agentic design review on Issue #28: the standards that apply, quoted with their identifiers, versions, and scopes'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot cloud agent"
+label = "Writes ADR 0001"
+ref = "PR #29"
+gate = { text = "ADR checks", state = "pass" }
+title = "Copilot writes the ADR."
+text = '''Its pull request, [#29], adds one file, ADR 0001, which compares two options for both operating profiles. *ADR checks* and *API contract compatibility* passed.'''
+
+[[steps.images]]
+file = "02-design-3-adr-checks.png"
+alt = '''The ADR checks run on pull request #29: ADR checks and API contract compatibility passed'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot code review"
+label = "Finds three gaps"
+ref = "Changes recommended"
+title = "Copilot code review finds three gaps."
+text = '''In the enterprise profile, the sequence diagram sent the policy tool's output straight to Foundry, past API Management. A field allowlist didn't keep personal data out of the free-text title and description. And a task deleted the small-team profile's AI audit entries after 90 days, a limit the standard sets only for recommendations.'''
+
+[[steps.images]]
+file = "02-design-4-code-review.png"
+alt = '''Copilot code review on the ADR: "Changes recommended", with its findings, starting with enterprise policy-tool traffic bypassing APIM'''
+
+[[steps]]
+lane = "person"
+label = "Sends the findings back"
+ref = "@copilot"
+title = "A person sends the findings back, and Copilot revises."
+text = '''The owner chose to send the three findings to Copilot with `@copilot`. Copilot pushed [`fcb8601`](prc:29/fcb8601), and said in one comment how it addressed each one.'''
+
+[[steps.images]]
+file = "02-design-5-revision.png"
+alt = '''Copilot's comment on the revision: each finding, and how fcb8601 addresses it, starting with the enterprise sequence, which now routes both model exchanges through APIM'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot code review"
+label = "Re-review: one more point"
+ref = "Per-call correlation"
+title = "The re-review finds one more point."
+text = '''No open issues remained. But the re-review raised a point the first review had missed: the ADR left earlier tool-calling responses untracked, so it must require per-call correlation that survives failures.'''
+
+[[steps.images]]
+file = "02-design-6-re-review.png"
+alt = '''Copilot's re-review: "Needs a closer look", because the ADR leaves earlier tool-calling responses untracked and must require failure-resilient per-call correlation'''
+
+[[steps]]
+lane = "person"
+label = "Accepts the ADR"
+ref = "Accepted"
+gate = { text = "ADR checks", state = "pass" }
+title = "A person accepts the ADR."
+text = '''The owner accepted it, with per-call correlation added as its open question 10. The status became Accepted, with the owner named as the decider. The checks passed again, and the ADR merged into `main` as [`b24d777`](commit:b24d777).'''
+
+[[steps.images]]
+file = "02-design-7-accepted.png"
+alt = '''The accepted ADR, docs/architecture/adr/0001-live-ai-triage-provider.md, on main after commit b24d777'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#28 Design: how should RequestHub add a live AI triage provider?"
+href = "issue:28"
+note = '''The question, with the design review's comment and its labels.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Agentic design review"
+href = "run:44096244741"
+note = '''The run that answered `/design-review` with the standards that apply.'''
+
+[[artifacts]]
+kind = "Merged pull request"
+name = "#29 Propose profile-specific live AI triage architecture"
+href = "pr:29"
+note = '''Copilot's ADR, both code reviews, the revision, and the decision.'''
+
+[[artifacts]]
+kind = "File"
+name = "docs/architecture/adr/0001-live-ai-triage-provider.md"
+href = "blob:docs/architecture/adr/0001-live-ai-triage-provider.md"
+note = '''ADR 0001, *Live AI triage provider*: the options, the decision, the diagrams, the API impact, a threat model checklist, seven tasks, and ten open questions.'''
+
+[[artifacts]]
+kind = "Folder"
+name = "docs/architecture/standards/"
+href = "tree:docs/architecture/standards"
+note = '''The approved standards the review and the ADR cite, each with its id and version.'''
+
+[[artifacts]]
+kind = "Commit"
+name = "fcb8601"
+href = "prc:29/fcb8601"
+note = '''Copilot's revision after code review.'''
+
+[[artifacts]]
+kind = "Commit"
+name = "b24d777"
+href = "commit:b24d777"
+note = '''The accepted ADR, merged into `main`.'''
+
+[[criteria]]
+criterion = '''At least two options, for both operating profiles'''
+check = '''*ADR checks*: two options; the owner'''
+result = '''Options A and B, each assessed for a small team and an enterprise'''
+state = "met"
+
+[[criteria]]
+criterion = '''Standards cited by id and version, with any conflict between them left to the reviewer'''
+check = '''*ADR checks*: every cited standard exists, at its current version; the owner'''
+result = '''PASS. Open question 1 leaves a direct conflict between two standards to a person'''
+state = "met"
+
+[[criteria]]
+criterion = '''An architecture diagram and a sequence diagram'''
+check = '''*ADR checks*: a Mermaid flowchart and a sequence diagram'''
+result = '''PASS. Code review corrected the sequence diagram'''
+state = "met"
+
+[[criteria]]
+criterion = '''The contract-impact report'''
+check = '''*ADR checks*: the API impact section; *API contract compatibility*'''
+result = '''PASS'''
+state = "met"
+
+[[criteria]]
+criterion = '''A threat-model checklist for the real data flow'''
+check = '''*ADR checks*: the section; Copilot code review'''
+result = '''PASS. Code review closed a personal-data gap'''
+state = "met"
+
+[[criteria]]
+criterion = '''Bounded implementation tasks, and open questions'''
+check = '''*ADR checks*: the sections'''
+result = '''7 tasks, 10 open questions'''
+state = "met"
+
+[[criteria]]
+criterion = '''The status stays Proposed until a person decides'''
+check = '''*ADR checks*: any other status must name the people who decided'''
+result = '''Accepted, with the owner as the decider'''
+state = "met"

@@ -1,0 +1,67 @@
+# Pages: build the guide to the landing zone's end-to-end run (site/) and publish it with GitHub Pages.
+# On a pull request that changes the guide, it only builds it: the build checks every link, anchor, reference, and
+# screenshot, and fails on a broken one. On a push to main, or when run by hand from main, it builds the guide and
+# deploys it to https://<owner>.github.io/<repository>/. Pages must deploy from GitHub Actions, set once:
+#   gh api -X POST 'repos/{owner}/{repo}/pages' -f build_type=workflow
+# With a custom domain, the site is served from /, so pass --base-path / instead of the repository's name.
+name: Pages · publish the guide
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - docs/see-it-work/images/**
+      - .github/workflows/pages.yml
+  pull_request:
+    paths:
+      - site/**
+      - docs/see-it-work/images/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build the guide
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Build, and check every link, anchor, and screenshot
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: python site/build.py --out _site --base-path "$BASE_PATH"
+      - name: Upload the site
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

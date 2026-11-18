@@ -1,0 +1,204 @@
+# Phase 06, Release. Steps, artifacts, acceptance criteria, and next step of the recorded run.
+kind = "phase"
+slug = "release"
+number = 6
+name = "Release"
+title = "Evidence, then a person's approval"
+accelerator = "solutions/06-release-github"
+lead = '''The Release accelerator builds a release candidate with its evidence, has Copilot summarize the evidence for the approver, and publishes only after a required reviewer approves.'''
+next = '''Operate handles incidents in what shipped ([phase 07](page:operate)); here, the Operate accelerator's sample incident stands in for one. Fixes merged after this release, such as Operate's, ship in the next one, such as version 1.0.1.'''
+
+[overview]
+output = ["evidence", "release"]
+starts = '''`gh workflow run release-github-candidate.yml -f version=1.0.0`'''
+copilot = '''Summarizes the evidence for the approver'''
+gate = '''The candidate's test gate, smoke test, and checksums'''
+person = '''The required reviewer approves the `release-github` deployment'''
+
+[facts]
+starts = '''`release-github-candidate.yml`, version 1.0.0'''
+produces = '''A summary of the evidence, for the approver'''
+complete = '''114 tests and 0 failures, the images tested by digest; checksums; approval only from `main`'''
+decides = '''The required reviewer approves the publish'''
+
+[[steps]]
+lane = "check"
+role = "Candidate workflow"
+label = "First candidate fails at the push"
+ref = "read_package"
+gate = { text = "Image push", state = "fail" }
+title = "The first candidate fails, and is fixed."
+text = '''The candidate for version 1.0.0 failed at the image push ([run](run:44125102015)): the owner's account already had a `requesthub-worker` package, which belongs to the source repository. The session fixed it in [#31]: the images now go under the repository's own path, with a unit test that fails on the old one. The fix merged through the six required checks.'''
+
+[[steps.images]]
+file = "06-release-0-first-candidate-failed.png"
+alt = '''The first release candidate run: preflight and the tests passed, then the image jobs failed'''
+
+[[steps]]
+lane = "check"
+role = "Candidate workflow"
+label = "Builds the evidence"
+ref = "version 1.0.0"
+gate = { text = "114 tests, 0 failures", state = "pass" }
+title = "The candidate builds the evidence."
+text = '''The second candidate ([run](run:44127979515)) ran the tests and built the two images. It ran a smoke test and the browser tests on the pushed images, by digest, and drafted the release with its manifest and checksums.'''
+
+[[steps.images]]
+file = "06-release-1-candidate.png"
+alt = '''The second release candidate run: preflight, API and worker tests, web UI tests, both images, the deployment check on the release images, and the draft release all passed'''
+
+[[steps]]
+lane = "copilot"
+role = "Agentic workflow"
+label = "Summarizes it for the approver"
+ref = "release summary"
+title = "Copilot summarizes the evidence for the approver."
+text = '''The agentic release summary ([run](run:44128460713)) added its section to the draft release.'''
+
+[[steps.images]]
+file = "06-release-2-summary-run.png"
+alt = '''The agentic release summary run: activation, agent, threat detection, and safe outputs jobs'''
+
+[[steps.images]]
+file = "06-release-3-draft.png"
+alt = '''The draft release RequestHub demo-v1.0.0: a demo release note, the candidate run, the commit, and the release evidence'''
+
+[[steps]]
+lane = "check"
+role = "Environment"
+label = "Refuses another branch"
+ref = "demo/not-main"
+title = "The gate refuses an approval from another branch."
+text = '''The `release-github` environment refused an approval started from `demo/not-main` ([run](run:44128532557)).'''
+
+[[steps.images]]
+file = "06-release-4-refused-branch.png"
+alt = '''The approval run from demo/not-main: Verify the evidence passed, then Record the approval and publish failed'''
+
+[[steps]]
+lane = "person"
+role = "Required reviewer"
+label = "Approves the release"
+ref = "release-github"
+title = "A person approves."
+text = '''The owner decided to publish. The approval workflow, started from `main` ([run](run:44145178997)), verified the evidence again. It then waited for the `release-github` environment's required reviewer, and the owner approved.'''
+
+[[steps.images]]
+file = "06-release-5-waiting-for-reviewer.png"
+alt = '''The approval run from main: Verify the evidence passed, and the run waits for a review to deploy to release-github'''
+
+[[steps.images]]
+file = "06-release-6-approved.png"
+alt = '''The approval run after the review: Verify the evidence and Record the approval and publish both passed'''
+
+[[steps]]
+lane = "check"
+role = "Verify"
+label = "Published, and checked"
+ref = "demo-v1.0.0"
+gate = { text = "8 passed, 0 failed", state = "pass" }
+title = "The release is published, and checked."
+text = '''`release_evidence.py verify --expect published` passed 8 checks, skipped 1, and failed none. The skipped check reads the image digests, which needs a token with access to packages.'''
+
+[[steps.images]]
+file = "06-release-7-published.png"
+alt = '''The published release RequestHub demo-v1.0.0, on commit 8d5f10f, with its release evidence'''
+
+[[steps.images]]
+file = "06-release-8-verify.png"
+alt = '''Terminal output of release_evidence.py verify for demo-v1.0.0 with --expect published: 8 passed, 1 skipped, 0 failed'''
+
+[[artifacts]]
+kind = "Release"
+name = "RequestHub demo-v1.0.0"
+href = "release:demo-v1.0.0"
+note = '''From commit `8d5f10f`, with its evidence attached and the approval recorded.'''
+
+[[artifacts]]
+kind = "File"
+name = "release-manifest.json"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/releases/download/demo-v1.0.0/release-manifest.json"
+note = '''Ties the release's files to the commit and the image digests.'''
+
+[[artifacts]]
+kind = "File"
+name = "SHA256SUMS"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/releases/download/demo-v1.0.0/SHA256SUMS"
+note = '''The SHA-256 of every file attached to the release.'''
+
+[[artifacts]]
+kind = "File"
+name = "approval-record.json"
+href = "https://github.com/melabadi/ai-sdlc-landing-zone/releases/download/demo-v1.0.0/approval-record.json"
+note = '''Who approved, when, from which run, and against which manifest.'''
+
+[[artifacts]]
+kind = "Images"
+name = "requesthub-api and requesthub-worker"
+note = '''Under `ghcr.io/melabadi/ai-sdlc-landing-zone/`, tagged `demo-v1.0.0`, and tested by digest.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Build the release candidate"
+href = "run:44127979515"
+note = '''The tests, the images, the smoke and browser tests on the images, and the draft release.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Agentic release summary"
+href = "run:44128460713"
+note = '''Copilot's summary for the approver, added to the draft.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Approval from another branch"
+href = "run:44128532557"
+note = '''Refused by the environment: only `main` may deploy.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "Approve and publish"
+href = "run:44145178997"
+note = '''Verified the evidence, waited for the required reviewer, and published.'''
+
+[[artifacts]]
+kind = "Merged pull request"
+name = "#31 Release images under the repository's own path"
+href = "pr:31"
+note = '''The fix for the first candidate, with a unit test that fails on the old path.'''
+
+[[criteria]]
+criterion = '''Every test suite passes on the release commit'''
+check = '''The candidate's test gate'''
+result = '''API and worker tests: 79 of 79. Web UI tests: 17 of 17'''
+state = "met"
+
+[[criteria]]
+criterion = '''The images that ship are the images tested'''
+check = '''The smoke test and the browser tests, on the pushed images, by digest'''
+result = '''9 of 9 each'''
+state = "met"
+
+[[criteria]]
+criterion = '''Every release file can be checked'''
+check = '''`SHA256SUMS`, and `release-manifest.json`, which ties the files to the commit and the image digests'''
+result = '''Attached'''
+state = "met"
+
+[[criteria]]
+criterion = '''Approval comes only from `main`'''
+check = '''The `release-github` environment's branch rule'''
+result = '''`demo/not-main` refused'''
+state = "met"
+
+[[criteria]]
+criterion = '''A person approves, with the evidence verified'''
+check = '''The approval workflow's evidence checks, then the environment's required reviewer'''
+result = '''10 of 10 checks; approved by the owner'''
+state = "met"
+
+[[criteria]]
+criterion = '''The published release matches its evidence'''
+check = '''`release_evidence.py verify --expect published`'''
+result = '''8 passed, 1 skipped, 0 failed. The skipped check reads the image digests, which needs a token with access to packages'''
+state = "met"

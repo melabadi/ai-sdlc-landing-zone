@@ -1,0 +1,228 @@
+# Phase 03, Develop. Steps, artifacts, acceptance criteria, and next step of the recorded run.
+kind = "phase"
+slug = "develop"
+number = 3
+name = "Develop"
+title = "A bounded feature, and a reviewer's own test"
+accelerator = "solutions/03-develop-github"
+lead = '''The Develop accelerator has Copilot build a feature from an Issue's acceptance criteria, with a test for each, inside bounds that a check enforces. The reviewer adds a test of their own.'''
+criteria_source = "[#26]"
+next = '''The feature ships in release `demo-v1.0.0` ([phase 06](page:release)). Next in the backlog are tasks [#20] and [#22]; task [#19] waits for the ADR's open questions.'''
+
+[overview]
+output = ["feature", "its tests"]
+starts = '''The *Develop: bounded feature for Copilot* form, assigned to Copilot with `develop-github`'''
+copilot = '''Builds the feature and a test per acceptance criterion'''
+gate = '''*Feature stays within its bounds* and CI, required'''
+person = '''Adds their own test, reviews, and merges'''
+
+[facts]
+starts = '''Issue [#26], for backlog task #21'''
+produces = '''The feature and a test per criterion, in [#27]'''
+complete = '''The eight criteria, each tested; the bounds check; CI, with the reviewer's own test'''
+decides = '''Hands a failing test back, then approves and merges'''
+
+[[steps]]
+lane = "person"
+label = "Files the feature"
+ref = "Issue #26"
+title = "A person files the feature."
+text = '''Issue [#26], in the *Develop: bounded feature for Copilot* form's format, comes from the accelerator's [`feature-issue.md`](https://github.com/melabadi/adept-assessment-northstars/blob/main/solutions/03-develop-github/feature-issue.md): a reviewer confirms the recommended routing department, for backlog task #21. The owner assigned it to Copilot with `develop-github`.'''
+
+[[steps.images]]
+file = "03-develop-1-issue.png"
+alt = '''Issue #26, "Develop: reviewer confirms the recommended routing department", naming backlog item #21 and tracing to transcript decisions and a governance policy'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot cloud agent"
+label = "Builds it, with a test per criterion"
+ref = "PR #27"
+title = "Copilot builds it, with tests."
+text = '''In [#27], Copilot added the confirmation endpoint, the audit entry, the UI, and the additive contract change, with tests for every criterion. It also found two problems in its own first draft, and fixed each one test-first: a race between a confirmation and a change to the request, and tool-call audits lost on stale results.'''
+
+[[steps.images]]
+file = "03-develop-2-session.png"
+alt = '''Copilot's session summary for the feature: the tests by acceptance criterion, starting with roles and access'''
+
+[[steps.images]]
+file = "03-develop-3-commits.png"
+alt = '''The commits of pull request #27: the plan, the feature, a failing regression test for the confirmation race, its fix, a failing regression for audit preservation, and its fix'''
+
+[[steps]]
+lane = "check"
+label = "Bounds and CI pass"
+ref = "6904201"
+title = "The checks pass."
+text = '''*Feature stays within its bounds* and CI passed on Copilot's last commit, [`6904201`](prc:27/6904201).'''
+
+[[steps.images]]
+file = "03-develop-4-bounds.png"
+alt = '''The feature bounds check on pull request #27: Feature stays within its bounds passed'''
+
+[[steps]]
+lane = "person"
+role = "The reviewer"
+label = "Adds a test of their own"
+ref = "7030a99"
+gate = { text = "Browser tests", state = "fail" }
+title = "The reviewer adds a test of their own, and it fails."
+text = '''The Develop README has the reviewer write their own test. Here the session wrote it for the owner, from criteria 1, 2, 3, 4, and 7: [`confirm-routing.spec.ts`](blob:app/web/e2e/confirm-routing.spec.ts). CI's *Browser tests* failed at line 37 ([run](run:44102782452)). Ben had confirmed a recommendation that moved a misrouted request to IT. The panel then showed **Confirmed by Ben Okafor** and also **Stale: request was rerouted since this suggestion**, though that reroute was the confirmation itself.'''
+
+[[steps.images]]
+file = "03-develop-5-reviewer-test-failed.png"
+alt = '''The CI run on commit 7030a99: Browser tests failed, while API and worker tests and Web UI checks passed'''
+
+[[steps.images]]
+file = "03-develop-5b-reviewer-test-output.png"
+alt = '''The failing browser test's output: 1 failed and 8 passed, with the failure at line 37 of the reviewer's test'''
+
+[[steps]]
+lane = "person"
+role = "The reviewer"
+label = "Hands it back"
+ref = "@copilot"
+title = "The reviewer hands it back to Copilot."
+text = '''With `@copilot`: fix the code, never the test.'''
+
+[[steps.images]]
+file = "03-develop-6-finding.png"
+alt = '''The comment to @copilot: the reviewer's browser test fails at line 37 because the triage panel shows both "Confirmed by Ben Okafor" and "Stale: request was rerouted since this suggestion"; fix the code, never the test'''
+
+[[steps]]
+lane = "copilot"
+role = "Copilot cloud agent"
+label = "Fixes the code, not the test"
+ref = "5bf93b8"
+gate = { text = "9 of 9 browser tests", state = "pass" }
+title = "Copilot fixes the code."
+text = '''Its commit, [`5bf93b8`](prc:27/5bf93b8), hides the stale notice once the routing is confirmed: 4 lines in `TriagePanel.tsx`, and its unit test. The reviewer's test is unchanged, and all 9 browser tests pass.'''
+
+[[steps.images]]
+file = "03-develop-7-fixed.png"
+alt = '''The CI run on the fix: API and worker tests, Web UI checks, and Browser tests passed'''
+
+[[steps]]
+lane = "person"
+label = "Approves and merges"
+ref = "0a7f181"
+title = "A person approves and merges."
+text = '''The owner approved the feature, and it merged into `main` as [`0a7f181`](commit:0a7f181). #26 closed.'''
+
+[[steps.images]]
+file = "03-develop-8-decision.png"
+alt = '''The owner's decision on pull request #27: approved and merged into main, with what was checked'''
+
+[[artifacts]]
+kind = "Issue"
+name = "#26 Develop: reviewer confirms the recommended routing department"
+href = "issue:26"
+note = '''The feature request, with its eight acceptance criteria.'''
+
+[[artifacts]]
+kind = "Merged pull request"
+name = "#27 Confirm triage routing recommendations"
+href = "pr:27"
+note = '''The feature, its tests, the reviewer's test, and Copilot's fix.'''
+
+[[artifacts]]
+kind = "Commit"
+name = "0a7f181"
+href = "commit:0a7f181"
+note = '''The feature, merged into `main`.'''
+
+[[artifacts]]
+kind = "File"
+name = "app/web/e2e/confirm-routing.spec.ts"
+href = "blob:app/web/e2e/confirm-routing.spec.ts"
+note = '''The reviewer's browser tests, written from the criteria.'''
+
+[[artifacts]]
+kind = "File"
+name = "app/tests/RequestHub.Tests/TriageTests.cs"
+href = "blob:app/tests/RequestHub.Tests/TriageTests.cs"
+note = '''The integration tests, the negative ones included.'''
+
+[[artifacts]]
+kind = "File"
+name = "app/web/src/features/detail/TriagePanel.test.tsx"
+href = "blob:app/web/src/features/detail/TriagePanel.test.tsx"
+note = '''The web unit tests for the button's states.'''
+
+[[artifacts]]
+kind = "File"
+name = "app/contracts/openapi.json"
+href = "blob:app/contracts/openapi.json"
+note = '''The API contract, with the confirm operation added.'''
+
+[[artifacts]]
+kind = "Workflow run"
+name = "CI on the reviewer's test"
+href = "run:44102782452"
+note = '''*Browser tests* failing at line 37 of the reviewer's test.'''
+
+[[artifacts]]
+kind = "Commit"
+name = "5bf93b8"
+href = "prc:27/5bf93b8"
+note = '''Copilot's fix: the stale notice hides once the routing is confirmed.'''
+
+[[criteria]]
+criterion = '''1. Only a reviewer or admin with access to both departments can confirm; anyone else gets `403`, and requesters never see the button'''
+check = '''Integration tests for a requester, an approver who isn't a reviewer, a reviewer without access to the current or the suggested department, and an admin; the reviewer's browser test'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''2. Confirming reroutes the request when the department differs, and marks the recommendation `Confirmed`; priority, decision, and approval status don't change'''
+check = '''Integration tests for a different and for the same department; the reviewer's browser test'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''3. Exactly one `triage.confirmed` audit entry, shown in History as **Routing confirmed: {department}**, in English and French'''
+check = '''Integration and web unit tests; the reviewer's browser test reads History'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''4. A stale recommendation is refused with `409` and `recommendation.stale`'''
+check = '''Integration tests for a superseded recommendation and for a department changed since, and Copilot's own race test; the reviewer's browser test'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''5. Confirming again returns `409` and `recommendation.already_confirmed`, and writes no audit entry'''
+check = '''Integration test'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''6. A closed request returns `409` and `request.terminal`'''
+check = '''Integration test'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''7. **Confirm routing** shows only when the user may confirm; afterwards the panel shows **Confirmed by {name}**'''
+check = '''Web unit tests; the reviewer's browser test'''
+result = '''Failed first: the panel also showed the stale notice. Met after Copilot's fix'''
+state = "fixed"
+
+[[criteria]]
+criterion = '''8. An additive contract change, and a test for each criterion'''
+check = '''*API contract compatibility*; the tests above'''
+result = '''Met'''
+state = "met"
+
+[[criteria]]
+criterion = '''The change stays within the feature's bounds'''
+check = '''*Feature stays within its bounds*'''
+result = '''Pass'''
+state = "met"
+
+[[criteria]]
+criterion = '''A person decides'''
+check = '''The owner's review'''
+result = '''Approved and merged'''
+state = "met"
