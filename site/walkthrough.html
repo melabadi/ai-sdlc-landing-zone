@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0d1117">
+  <title>AI SDLC · The walkthrough</title>
+  <meta name="description" content="How to add AI across the SDLC with GitHub Copilot CLI, cloud agent, code review, Agent Skills, and GitHub Agentic Workflows. An interactive English/French presentation.">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/site.css">
+  <link rel="stylesheet" href="../assets/walkthrough.css?v=${style_version}">
+  <script src="../assets/walkthrough.js?v=${script_version}" defer></script>
+</head>
+<body class="walkthrough">
+  <svg class="icon-library" aria-hidden="true" focusable="false"><defs>${symbols}</defs></svg>
+  <a class="skip-link" href="#main" data-text="skip">Skip to the content</a>
+  <header class="tour-header">
+    <a class="tour-brand" href="../"><svg class="octicon" aria-hidden="true"><use href="#icon-mark-github"></use></svg><span>AI <span class="brand-muted">/</span> SDLC<span class="brand-dot">.</span></span></a>
+    <span class="header-caption" data-text="header">GITHUB / AI ACROSS THE SDLC</span>
+    <div class="tour-tools">
+      <button id="language" type="button" aria-label="Passer en français"><span lang="en">EN</span><span class="language-divider">/</span><span lang="fr">FR</span></button>
+      <button id="fullscreen" type="button" aria-pressed="false"><span aria-hidden="true">⛶</span> <span data-text="fullscreen">Full screen</span></button>
+      <a href="${repo_url}" class="repo-link"><svg class="octicon" aria-hidden="true"><use href="#icon-mark-github"></use></svg><span data-text="repository">Repository</span></a>
+    </div>
+  </header>
+  <main id="main" tabindex="-1">
+    <section class="tour-intro">
+      <p class="tour-eyebrow"><span class="live-dot" aria-hidden="true"></span><span data-text="eyebrow">SEVEN PHASES. ONE CONNECTED LIFECYCLE.</span></p>
+      <p class="tour-principle" data-text="principle">Where AI fits. How we put it to work.</p>
+    </section>
+    <nav id="phase-nav" class="phase-nav" aria-label="SDLC phases"></nav>
+    <div class="presentation">
+      <div id="slide" class="chapter-stack"></div>
+      <footer class="slide-footer">
+        <div class="step-navigation">
+          <button id="previous" type="button" aria-label="Previous step"><svg class="octicon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg></button>
+          <span id="position"></span>
+          <button id="next" type="button"><span>Next step</span><svg class="octicon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg></button>
+        </div>
+        <div class="autoplay-controls">
+          <button id="autoplay" type="button" aria-pressed="false"><span id="play-symbol" aria-hidden="true">▶</span> <span id="play-label">Autoslide</span></button>
+          <label for="speed" data-text="speed">Seconds / step</label>
+          <input id="speed" type="range" min="3" max="20" value="8">
+          <output id="speed-value" for="speed">8s</output>
+        </div>
+      </footer>
+      <div id="timer-track" class="timer-track" aria-hidden="true"><div id="timer-fill"></div></div>
+    </div>
+    <div class="tour-bottom"><span><svg class="octicon" aria-hidden="true"><use href="#icon-shield-check"></use></svg> <span data-text="guardrail">Human approval is a boundary, not a shortcut.</span></span><span data-text="keyboard">← → Navigate · Home / End · Space Play / Pause</span></div>
+    <p id="announcement" class="visually-hidden" role="status" aria-live="polite"></p>
+    <p id="error" class="tour-error" role="alert"></p>
+    <details class="technology-sources">
+      <summary data-text="sources">Technology references</summary>
+      <p data-text="sourceNote"></p>
+      <ul>
+        <li><a href="https://docs.github.com/en/copilot/concepts/copilot-surfaces/copilot-cli">GitHub Copilot CLI</a></li>
+        <li><a href="https://docs.github.com/en/copilot/concepts/copilot-surfaces/copilot-on-github">GitHub Copilot cloud agent</a></li>
+        <li><a href="https://docs.github.com/en/copilot/concepts/customizations/custom-agents">Custom agents</a></li>
+        <li><a href="https://docs.github.com/en/copilot/concepts/customizations/agent-skills">Agent Skills</a></li>
+        <li><a href="https://learn.microsoft.com/visualstudio/ide/copilot-agent-skills?view=visualstudio">Agent Skills · Microsoft Learn</a></li>
+        <li><a href="https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-code-review">GitHub Copilot code review</a></li>
+        <li><a href="https://github.github.com/gh-aw/">GitHub Agentic Workflows · gh-aw</a></li>
+      </ul>
+    </details>
+    <noscript><p class="tour-error">This slideshow requires JavaScript. / Ce diaporama nécessite JavaScript. <a href="../">Read the guide / Lire le guide</a>.</p></noscript>
+  </main>
+</body>
+</html>

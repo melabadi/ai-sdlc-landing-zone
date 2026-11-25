@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import hashlib
 import html
 import http.server
 import re
@@ -592,6 +593,7 @@ def stepper(phases: list[dict], current: dict, ctx: Ctx) -> str:
 
 def nav(section: str, ctx: Ctx) -> str:
     entries = [("how", "How it works", ctx.page("home", "how-it-works")), ("run", "The run", ctx.page("plan")),
+               ("walkthrough", "Slideshow", ctx.page("walkthrough")),
                ("results", "Results", ctx.page("results"))]
     items = [f'<li><a href="{esc(href)}"{" aria-current=page" if key == section else ""}>{label}</a></li>'
              for key, label, href in entries]
@@ -615,7 +617,7 @@ def load() -> tuple[dict, list[dict]]:
         page = tomllib.loads((SITE / "pages" / name).read_text(encoding="utf-8"))
         page["file"] = f"site/pages/{name}"
         pages.append(page)
-    config["slugs"] = {page["slug"] for page in pages}
+    config["slugs"] = {page["slug"] for page in pages} | {"walkthrough"}
     return config, pages
 
 
@@ -640,6 +642,16 @@ def render(config: dict, pages: list[dict], base_path: str) -> dict[str, str]:
             layout, ctx, title, description, content, section, steps, f"page-{page['kind']}")
     ctx = Ctx(config, base_path, "404.html")
     out["404.html"] = shell(layout, ctx, f"Not found · {site_title}", config["description"], render_404(ctx))
+    presentation = Template((SITE / "walkthrough.html").read_text(encoding="utf-8"))
+    names = ("mark-github", "issue-opened", "git-branch", "git-pull-request", "check-circle",
+             "shield-check", "package", "workflow", "comment", "arrow-left", "arrow-right", "book",
+             "gear", "git-merge", "file", "eye", "copilot", "terminal", "code-review")
+    symbols = "".join(f'<symbol id="icon-{name}" viewBox="0 0 16 16">{icon_paths(name)}</symbol>'
+                      for name in names)
+    out["walkthrough/index.html"] = presentation.substitute(
+        symbols=symbols, repo_url=esc(ctx.gh()),
+        style_version=hashlib.sha256((SITE / "assets" / "walkthrough.css").read_bytes()).hexdigest()[:12],
+        script_version=hashlib.sha256((SITE / "assets" / "walkthrough.js").read_bytes()).hexdigest()[:12])
     return out
 
 
