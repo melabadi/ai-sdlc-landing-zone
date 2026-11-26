@@ -41,6 +41,10 @@ def main():
                     expect(page.locator("#position")).to_have_text(phase_position)
                     expect(step_counter).to_have_text(re.compile(rf"{step_index + 2:02d} / 05$"))
                     expect(frame).to_have_attribute("data-kind", "technology")
+                    if phase_index < 2 and step_index == 0:
+                        # Plan and Design start in the desktop app, not the CLI or a background workflow.
+                        expect(frame).to_have_attribute("data-role", "app")
+                        expect(frame.locator("h2")).to_contain_text("GitHub Copilot")
                     expect(frame.locator("h2")).not_to_be_empty()
                     expect(frame.locator(".build-action")).not_to_be_empty()
                     expect(frame.locator(".technical-hook")).not_to_be_empty()
