@@ -38,9 +38,9 @@ Changing steps manually pauses it, and hidden browser tabs suspend the timer. **
 Fullscreen API; Escape exits. Arrow keys navigate, Home/End jump to the beginning/end, and Space toggles autoplay
 when focus is outside a control. Reduced-motion preferences disable slide and timer animations.
 
-The **QR code** button (or **Q**) opens a panel with a QR code for the repository in `site.toml`, so an audience can
-scan it from the screen; Escape, **Q**, or the close button hides it. [`qr.py`](qr.py) generates it at build time
-with the standard library only, so it always matches the configured repository and adds no dependency.
+The repository QR code stays visible in the bottom-right corner on every slide, including in fullscreen.
+Scan it from the audience or click it to open the repository. [`qr.py`](qr.py) generates it from `site.toml`
+at build time without an external service.
 
 Edit [`walkthrough.html`](walkthrough.html) for the shell, [`assets/walkthrough.css`](assets/walkthrough.css)
 for the presentation styling, and [`assets/walkthrough.js`](assets/walkthrough.js) for the paired English/French
