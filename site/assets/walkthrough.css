@@ -10,7 +10,15 @@
 .brand-muted { color: #596575; font-weight: 400; padding-inline: 5px; }
 .brand-dot { color: #a5a0ff; }
 .header-caption { font: 10px var(--font-mono); letter-spacing: .1em; color: #929eaf; }
-.tour-tools { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+.tour-tools { display: flex; gap: 10px; align-items: center; margin-left: auto; position: relative; }
+.qr-panel { position: absolute; top: calc(100% + 14px); right: 0; z-index: 30; width: max-content; max-width: min(92vw, 340px); padding: 40px 18px 16px; border: 1px solid #424959; border-radius: 14px; background: var(--surface); box-shadow: 0 24px 60px #010409cc, 0 0 0 1px #0d1117; animation: qr-in .22s cubic-bezier(.2, .8, .2, 1); }
+.qr-panel[hidden] { display: none; }
+.qr-panel figure { margin: 0; display: grid; gap: 14px; justify-items: center; }
+.qr-code { display: block; width: min(46vh, 288px); max-width: 100%; aspect-ratio: 1; border-radius: 10px; }
+.qr-panel figcaption { display: grid; gap: 4px; text-align: center; font-size: 13px; color: #e6edf3; }
+.qr-panel figcaption a { color: #b8b2ff; font: 11px var(--font-mono); overflow-wrap: anywhere; }
+.walkthrough .qr-close { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; padding: 0; border-color: transparent; background: transparent; color: #9da9b9; font-size: 12px; }
+@keyframes qr-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
 .walkthrough button, .repo-link { border: 1px solid var(--line); border-radius: 7px; background: #161d28; color: #e6edf3; font: 500 12px var(--font); padding: 9px 13px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; justify-content: center; text-decoration: none; }
 .walkthrough button:hover, .repo-link:hover { border-color: #8b949e; background: #212b3b; color: white; }
 .walkthrough button:disabled { opacity: .35; cursor: not-allowed; }

@@ -4,6 +4,7 @@ import unittest
 from urllib.parse import urlsplit
 
 import build
+import qr
 
 
 class WalkthroughBuildTests(unittest.TestCase):
@@ -30,6 +31,12 @@ class WalkthroughBuildTests(unittest.TestCase):
             with self.subTest(asset=asset):
                 self.assertTrue((build.SITE / "assets" / asset).is_file())
         self.assertEqual([], build.PROBLEMS)
+
+    def test_qr_code_encodes_the_configured_repository(self):
+        document = self.rendered["walkthrough/index.html"]
+        repository = f"https://github.com/{build.load()[0]['repository']}"
+        self.assertIn(qr.to_svg(qr.encode(repository)), document)
+        self.assertIn(f'<a href="{repository}">{repository.removeprefix("https://")}</a>', document)
 
     def test_project_site_paths_remain_relative(self):
         document = self.rendered["walkthrough/index.html"]

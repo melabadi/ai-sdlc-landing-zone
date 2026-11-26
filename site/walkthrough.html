@@ -21,7 +21,15 @@
     <div class="tour-tools">
       <button id="language" type="button" aria-label="Passer en français"><span lang="en">EN</span><span class="language-divider">/</span><span lang="fr">FR</span></button>
       <button id="fullscreen" type="button" aria-pressed="false"><span aria-hidden="true">⛶</span> <span data-text="fullscreen">Full screen</span></button>
+      <button id="qr-toggle" type="button" aria-expanded="false" aria-controls="qr-panel" aria-keyshortcuts="Q"><svg class="octicon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M1 1h5v5H1zm1.5 1.5v2h2v-2zM10 1h5v5h-5zm1.5 1.5v2h2v-2zM1 10h5v5H1zm1.5 1.5v2h2v-2zM10 10h2v2h-2zm3 0h2v2h-2zm-3 3h2v2h-2zm3 0h2v2h-2z"/></svg><span data-text="qr">QR code</span></button>
       <a href="${repo_url}" class="repo-link"><svg class="octicon" aria-hidden="true"><use href="#icon-mark-github"></use></svg><span data-text="repository">Repository</span></a>
+      <section id="qr-panel" class="qr-panel" aria-labelledby="qr-title" hidden>
+        <button id="qr-close" type="button" class="qr-close" aria-label="Close">✕</button>
+        <figure>
+          ${qr_svg}
+          <figcaption><strong id="qr-title" data-text="qrTitle">Scan to open the repository</strong><a href="${repo_url}">${repo_label}</a></figcaption>
+        </figure>
+      </section>
     </div>
   </header>
   <main id="main" tabindex="-1">

@@ -125,8 +125,48 @@ def main():
         expect(page.locator("#position")).to_have_text("02 / 07")
         expect(page.get_by_role("heading", level=2)).to_have_count(1)
         expect(page.locator(".build-frame:visible")).to_have_count(1)
+        check_qr(page)
         assert not errors, errors
         browser.close()
+
+
+def check_qr(page):
+    """The QR code opens from its button or Q, links to the repository, fits both viewports, and closes."""
+    page.emulate_media(reduced_motion="reduce")
+    panel, toggle = page.locator("#qr-panel"), page.locator("#qr-toggle")
+    repository = page.locator(".repo-link").get_attribute("href")
+    position = page.locator("#position").inner_text()
+    expect(panel).to_be_hidden()
+    expect(toggle).to_have_attribute("aria-expanded", "false")
+    for size in ({"width": 1280, "height": 720}, {"width": 390, "height": 844}):
+        page.set_viewport_size(size)
+        toggle.click()
+        expect(panel).to_be_visible()
+        expect(toggle).to_have_attribute("aria-expanded", "true")
+        expect(panel.get_by_role("link")).to_have_attribute("href", repository)
+        box, code = panel.bounding_box(), panel.locator("svg").bounding_box()
+        assert abs(code["width"] - code["height"]) < 1 and code["width"] >= 150, code
+        assert 0 <= box["x"] and box["x"] + box["width"] <= size["width"], box
+        assert 0 <= box["y"] and box["y"] + box["height"] <= size["height"], box
+        page.keyboard.press("Escape")
+        expect(panel).to_be_hidden()
+    page.set_viewport_size({"width": 1280, "height": 720})
+    page.keyboard.press("q")
+    expect(panel).to_be_visible()
+    caption = panel.locator("figcaption strong")
+    languages = {"en": "Scan to open the repository", "fr": "Scannez pour ouvrir le dépôt"}
+    current = page.locator("html").get_attribute("lang")
+    expect(caption).to_have_text(languages[current])
+    page.locator("#language").click()
+    expect(caption).to_have_text(languages["fr" if current == "en" else "en"])
+    expect(panel).to_be_visible()
+    page.get_by_role("heading", level=1).click()
+    expect(panel).to_be_hidden()
+    page.keyboard.press("q")
+    expect(panel).to_be_visible()
+    page.keyboard.press("q")
+    expect(panel).to_be_hidden()
+    assert page.locator("#position").inner_text() == position
 
 
 if __name__ == "__main__":
