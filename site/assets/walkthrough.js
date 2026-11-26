@@ -15,7 +15,7 @@
       keyboard: "← → Navigate · Home / End · Space Play / Pause",
       previous: "Previous step", next: "Next step", nextPhase: "Next phase", end: "End", nav: "SDLC phases",
       phase: "PHASE", step: "Step", inside: "In this phase", handoff: "Decision & handoff",
-      roles: {interactive: "Interactive AI", delegated: "Delegated AI", event: "Event-driven AI",
+      roles: {app: "Interactive AI · desktop app", interactive: "Interactive AI", delegated: "Delegated AI", event: "Event-driven AI",
         guidance: "Reusable AI guidance", review: "AI review", check: "Deterministic automation · not AI",
         control: "Enforced permissions · not AI"},
       fullscreenError: "Full screen could not be changed. Use your browser's full-screen control.",
@@ -27,7 +27,7 @@
           checks: "JSON Schema + source-citation validation", decision: "Product owner approves scope and resolves conflicts.",
           recipient: "Design", output: "Agreed requirements, acceptance criteria, and open questions.",
           steps: [
-            ["interactive", "GitHub Copilot CLI", "An analyst refines requirements in the terminal, asking the agent to read the notes, identify contradictions, and surface missing decisions.", "copilot --agent plan-github"],
+            ["app", "GitHub Copilot app · Plan mode", "The analyst opens a repository session and asks Copilot to compare workshop notes with business rules. The product owner resolves the conflicts and sets the scope.", "“Which requirements conflict? Cite both sources.”"],
             ["guidance", "Custom agents + Agent Skills", "The plan-github profile defines the role. The requirements-traceability skill supplies the procedure for citations and testable acceptance criteria.", "Role: .agent.md  /  Procedure: SKILL.md"],
             ["delegated", "GitHub Copilot cloud agent", "For asynchronous work, assign the planning Issue to the specialist. It drafts the requirements in a pull request for the product owner to review.", "Issue assignment → plan-github → pull request"]
           ]
@@ -38,8 +38,8 @@
           checks: "ADR structure + OpenAPI compatibility", decision: "Architect accepts the trade-offs; policy owners resolve conflicts.",
           recipient: "Develop", output: "An accepted approach, API boundaries, and implementation tasks.",
           steps: [
-            ["event", "GitHub Agentic Workflows", "A /design-review comment starts a Copilot-engine workflow. It reads standards and affected code, then comments on constraints and conflicts.", "/design-review → engine: copilot → comment"],
-            ["delegated", "GitHub Copilot cloud agent", "The design-github specialist uses the architecture-decision skill to compare options, sketch interactions, and explain API and trust-boundary impacts.", "design-github + architecture-decision"],
+            ["app", "GitHub Copilot app · Interactive mode", "The architect opens a repository session with the approved brief and compares two options against the current API. Copilot explains the trade-offs; the architect chooses the approach.", "“Which option preserves the OpenAPI contract, and why?”"],
+            ["event", "GitHub Agentic Workflows", "For a second opinion, the architect posts /design-review. The workflow compares the proposal with repository standards and flags conflicts for review.", "/design-review → engine: copilot → comment"],
             ["review", "GitHub Copilot code review", "Repository review instructions focus the AI review on architectural gaps. The architect sends findings back for revision before accepting the design.", ".github/instructions/ → targeted ADR review"]
           ]
         },
@@ -114,7 +114,7 @@
       keyboard: "← → Navigation · Début / Fin · Espace Lecture / Pause",
       previous: "Étape précédente", next: "Étape suivante", nextPhase: "Phase suivante", end: "Fin", nav: "Phases du cycle de vie",
       phase: "PHASE", step: "Étape", inside: "Dans cette phase", handoff: "Décision et relais",
-      roles: {interactive: "IA interactive", delegated: "IA déléguée", event: "IA événementielle",
+      roles: {app: "IA interactive · application de bureau", interactive: "IA interactive", delegated: "IA déléguée", event: "IA événementielle",
         guidance: "Instructions réutilisables", review: "Revue par l’IA", check: "Automatisation déterministe · sans IA",
         control: "Permissions imposées · sans IA"},
       fullscreenError: "Impossible de changer le mode plein écran. Utilisez la commande de votre navigateur.",
@@ -126,7 +126,7 @@
           checks: "JSON Schema + vérification des sources", decision: "Le responsable produit approuve le périmètre et tranche les conflits.",
           recipient: "Conception", output: "Exigences partagées, critères d’acceptation et questions ouvertes.",
           steps: [
-            ["interactive", "GitHub Copilot CLI", "L’analyste affine les exigences dans le terminal : l’agent lit les notes, identifie les contradictions et signale les décisions manquantes.", "copilot --agent plan-github"],
+            ["app", "Application GitHub Copilot · mode Plan", "L’analyste ouvre une session sur le dépôt et demande à Copilot de comparer les notes d’atelier aux règles métier. Le responsable produit tranche les contradictions et fixe le périmètre.", "« Quelles exigences se contredisent ? Cite les deux sources. »"],
             ["guidance", "Agents personnalisés + Agent Skills", "Le profil plan-github définit le rôle. La skill requirements-traceability fournit la méthode pour les citations et les critères vérifiables.", "Rôle : .agent.md  /  Méthode : SKILL.md"],
             ["delegated", "GitHub Copilot cloud agent", "Pour un travail asynchrone, attribuer le ticket au spécialiste. Il propose les exigences dans une pull request que le responsable produit relit.", "Attribution du ticket → plan-github → pull request"]
           ]
@@ -137,8 +137,8 @@
           checks: "Structure de l’ADR + compatibilité OpenAPI", decision: "L’architecte accepte les compromis ; les responsables tranchent les conflits.",
           recipient: "Développement", output: "Une approche acceptée, des limites d’API et des tâches de réalisation.",
           steps: [
-            ["event", "GitHub Agentic Workflows", "Un commentaire /design-review lance un workflow utilisant le moteur Copilot. Il lit les standards et le code, puis commente contraintes et conflits.", "/design-review → engine: copilot → commentaire"],
-            ["delegated", "GitHub Copilot cloud agent", "Le spécialiste design-github utilise architecture-decision pour comparer les options, schématiser les interactions et préciser l’impact sur l’API et la confiance.", "design-github + architecture-decision"],
+            ["app", "Application GitHub Copilot · mode interactif", "À partir du cadrage validé, l’architecte ouvre une session sur le dépôt et compare deux options au regard de l’API existante. Copilot explique les compromis ; l’architecte choisit l’approche.", "« Quelle option préserve le contrat OpenAPI, et pourquoi ? »"],
+            ["event", "GitHub Agentic Workflows", "Pour un second avis, l’architecte publie le commentaire /design-review. Le workflow compare la proposition aux règles du dépôt et signale les écarts à examiner.", "/design-review → engine: copilot → commentaire"],
             ["review", "GitHub Copilot code review", "Les instructions de revue du dépôt orientent l’IA vers les lacunes d’architecture. L’architecte demande des révisions avant d’accepter la conception.", ".github/instructions/ → revue ciblée de l’ADR"]
           ]
         },
@@ -202,7 +202,7 @@
   };
   const slugs = ["plan", "design", "develop", "test", "secure", "release", "operate"];
   const icons = ["issue-opened", "git-branch", "git-pull-request", "check-circle", "shield-check", "package", "workflow"];
-  const roleIcons = {interactive: "terminal", delegated: "copilot", event: "workflow",
+  const roleIcons = {app: "copilot", interactive: "terminal", delegated: "copilot", event: "workflow",
     guidance: "book", review: "code-review", check: "shield-check", control: "shield-check"};
   const $ = (id) => document.getElementById(id);
   const svg = (name) => {

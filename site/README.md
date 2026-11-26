@@ -15,7 +15,9 @@ Then open `http://127.0.0.1:8000/`. The build needs Python 3.12 or later and not
 [Open the slideshow on GitHub Pages](https://melabadi.github.io/ai-sdlc-landing-zone/walkthrough/),
 or select **Slideshow** in the guide's navigation. Locally, open `http://127.0.0.1:8000/walkthrough/`.
 This is the browser presentation of **how we add AI to each SDLC phase**, not a replay of the recorded demo
-and not a PowerPoint export. It names the exact capability—Copilot CLI, Copilot cloud agent, custom agents,
+and not a PowerPoint export. Plan and Design start in the GitHub Copilot desktop app: an analyst uses Plan mode
+to clarify requirements, and an architect uses Interactive mode to compare options against the API contract.
+The deck names the exact capability—Copilot CLI, Copilot cloud agent, custom agents,
 Agent Skills, Copilot code review, or GitHub Agentic Workflows—and explains how we use it.
 The presentation has exactly one slide per phase (seven slides total). Each slide opens with its input.
 Advance through three technology spotlights, one at a time:
