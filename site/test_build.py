@@ -35,8 +35,10 @@ class WalkthroughBuildTests(unittest.TestCase):
     def test_qr_code_encodes_the_configured_repository(self):
         document = self.rendered["walkthrough/index.html"]
         repository = f"https://github.com/{build.load()[0]['repository']}"
-        self.assertIn(qr.to_svg(qr.encode(repository)), document)
-        self.assertIn(f'<a href="{repository}">{repository.removeprefix("https://")}</a>', document)
+        badge = re.search(r'<a class="repo-qr" href="([^"]+)">(.*?)</a>', document, re.S)
+        self.assertIsNotNone(badge)
+        self.assertEqual(repository, badge[1])
+        self.assertIn(qr.to_svg(qr.encode(repository)), badge[2])
 
     def test_project_site_paths_remain_relative(self):
         document = self.rendered["walkthrough/index.html"]
