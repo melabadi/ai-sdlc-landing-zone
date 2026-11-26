@@ -38,6 +38,10 @@ Changing steps manually pauses it, and hidden browser tabs suspend the timer. **
 Fullscreen API; Escape exits. Arrow keys navigate, Home/End jump to the beginning/end, and Space toggles autoplay
 when focus is outside a control. Reduced-motion preferences disable slide and timer animations.
 
+The **QR code** button (or **Q**) opens a panel with a QR code for the repository in `site.toml`, so an audience can
+scan it from the screen; Escape, **Q**, or the close button hides it. [`qr.py`](qr.py) generates it at build time
+with the standard library only, so it always matches the configured repository and adds no dependency.
+
 Edit [`walkthrough.html`](walkthrough.html) for the shell, [`assets/walkthrough.css`](assets/walkthrough.css)
 for the presentation styling, and [`assets/walkthrough.js`](assets/walkthrough.js) for the paired English/French
 content and controls. Icons reuse the local, MIT-licensed Octicons; there are no external scripts or services.
@@ -54,6 +58,7 @@ This optional browser check needs Python Playwright and its Chromium browser; th
 | [`site.toml`](site.toml) | The title, the repository, the order of the pages, and the Issues and pull requests that `[#N]` links to |
 | [`pages/`](pages/) | One TOML file per page: [`home.toml`](pages/home.toml), the seven phases from [`plan.toml`](pages/plan.toml) to [`operate.toml`](pages/operate.toml), and [`results.toml`](pages/results.toml) |
 | [`build.py`](build.py) | Renders the pages, draws the diagrams, copies the assets and the screenshots, and checks everything |
+| [`qr.py`](qr.py) | The standard-library QR encoder behind the slideshow's QR code |
 | [`layout.html`](layout.html) | The page shell: the head, the header, and the footer |
 | [`assets/`](assets/) | The stylesheet, the screenshot viewer's script, the favicon, and the Mona Sans fonts with their licence, [`OFL.txt`](assets/fonts/OFL.txt) |
 | [`icons/`](icons/) | The Octicons the pages use, with their [licence](icons/LICENSE) |

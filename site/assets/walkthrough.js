@@ -5,6 +5,7 @@
       title: "AI SDLC · The walkthrough", skip: "Skip to the content",
       header: "GITHUB / AI ACROSS THE SDLC", fullscreen: "Full screen",
       exitFullscreen: "Exit full screen", repository: "Repository",
+      qr: "QR code", qrTitle: "Scan to open the repository", qrClose: "Close",
       eyebrow: "SEVEN PHASES. ONE CONNECTED LIFECYCLE.",
       principle: "Where AI fits. How we put it to work.",
       input: "Start with", output: "Pass forward", tools: "Technology spotlight",
@@ -12,7 +13,7 @@
       sourceNote: "This deck describes our implementation pattern, not a live run. Product capabilities are documented below; the controls and handoffs are our choices.",
       speed: "Seconds / step", play: "Autoslide", pause: "Pause",
       guardrail: "Human approval is a boundary, not a shortcut.",
-      keyboard: "← → Navigate · Home / End · Space Play / Pause",
+      keyboard: "← → Navigate · Home / End · Space Play / Pause · Q QR code",
       previous: "Previous step", next: "Next step", nextPhase: "Next phase", end: "End", nav: "SDLC phases",
       phase: "PHASE", step: "Step", inside: "In this phase", handoff: "Decision & handoff",
       roles: {app: "Interactive AI · desktop app", interactive: "Interactive AI", delegated: "Delegated AI", event: "Event-driven AI",
@@ -104,6 +105,7 @@
       title: "Cycle de vie logiciel avec l'IA · Le parcours", skip: "Aller au contenu",
       header: "GITHUB / L’IA DANS LE CYCLE LOGICIEL", fullscreen: "Plein écran",
       exitFullscreen: "Quitter le plein écran", repository: "Dépôt",
+      qr: "Code QR", qrTitle: "Scannez pour ouvrir le dépôt", qrClose: "Fermer",
       eyebrow: "SEPT PHASES. UN CYCLE DE VIE CONNECTÉ.",
       principle: "Où intégrer l’IA. Comment l’utiliser.",
       input: "Point de départ", output: "Transmission", tools: "Zoom sur les technologies",
@@ -111,7 +113,7 @@
       sourceNote: "Ce diaporama présente notre approche, pas une exécution en direct. Les capacités des produits sont documentées ci-dessous ; les contrôles et les relais relèvent de nos choix.",
       speed: "Secondes / étape", play: "Défilement auto", pause: "Pause",
       guardrail: "L'approbation humaine est une limite, pas un raccourci.",
-      keyboard: "← → Navigation · Début / Fin · Espace Lecture / Pause",
+      keyboard: "← → Navigation · Début / Fin · Espace Lecture / Pause · Q Code QR",
       previous: "Étape précédente", next: "Étape suivante", nextPhase: "Phase suivante", end: "Fin", nav: "Phases du cycle de vie",
       phase: "PHASE", step: "Étape", inside: "Dans cette phase", handoff: "Décision et relais",
       roles: {app: "IA interactive · application de bureau", interactive: "IA interactive", delegated: "IA déléguée", event: "IA événementielle",
@@ -328,6 +330,7 @@
       node.textContent = text[node.dataset.text];
     });
     $("language").setAttribute("aria-label", language === "en" ? "Passer en français" : "Switch to English");
+    $("qr-close").setAttribute("aria-label", text.qrClose);
     $("phase-nav").setAttribute("aria-label", text.nav);
     const nav = slugs.map((slug, index) => {
       const button = document.createElement("button");
@@ -427,6 +430,15 @@
     $("speed-value").value = `${$("speed").value}s`;
     schedule();
   });
+  function setQr(open) {
+    $("qr-panel").hidden = !open;
+    $("qr-toggle").setAttribute("aria-expanded", String(open));
+  }
+  $("qr-toggle").addEventListener("click", () => setQr($("qr-panel").hidden));
+  $("qr-close").addEventListener("click", () => { setQr(false); $("qr-toggle").focus(); });
+  document.addEventListener("click", (event) => {
+    if (!$("qr-panel").hidden && !event.target.closest(".tour-tools")) setQr(false);
+  });
   $("fullscreen").addEventListener("click", async () => {
     $("error").textContent = "";
     if (!document.fullscreenEnabled) {
@@ -450,6 +462,11 @@
       if (event.target.closest("button, a, summary")) return;
       event.preventDefault();
       $("autoplay").click();
+    } else if (event.key.toLowerCase() === "q") {
+      setQr($("qr-panel").hidden);
+    } else if (event.key === "Escape" && !$("qr-panel").hidden) {
+      if ($("qr-panel").contains(event.target)) $("qr-toggle").focus();
+      setQr(false);
     } else if (["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) {
       event.preventDefault();
       setPlaying(false);

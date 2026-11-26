@@ -54,6 +54,8 @@ from pathlib import Path
 from string import Template
 from urllib.parse import urljoin, urlsplit
 
+import qr
+
 SITE = Path(__file__).resolve().parent
 REPO = SITE.parent
 LANES = {"person": "A person", "copilot": "Copilot", "check": "A check"}
@@ -649,7 +651,8 @@ def render(config: dict, pages: list[dict], base_path: str) -> dict[str, str]:
     symbols = "".join(f'<symbol id="icon-{name}" viewBox="0 0 16 16">{icon_paths(name)}</symbol>'
                       for name in names)
     out["walkthrough/index.html"] = presentation.substitute(
-        symbols=symbols, repo_url=esc(ctx.gh()),
+        symbols=symbols, repo_url=esc(ctx.gh()), repo_label=esc(ctx.gh().removeprefix("https://")),
+        qr_svg=qr.to_svg(qr.encode(ctx.gh())),
         style_version=hashlib.sha256((SITE / "assets" / "walkthrough.css").read_bytes()).hexdigest()[:12],
         script_version=hashlib.sha256((SITE / "assets" / "walkthrough.js").read_bytes()).hexdigest()[:12])
     return out
